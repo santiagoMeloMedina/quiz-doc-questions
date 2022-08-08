@@ -5,11 +5,16 @@ import os
 from typing import Dict, Generator, List, Optional, Tuple
 from itertools import islice
 import signal
+from voice import SpeechTranslator
 
 
 ###########################################################
 ### THIS CODE COULD BE GREATLY IMPROVED BY USING CLASSES ##
 ###########################################################
+
+
+SPEECH = SpeechTranslator()
+SPEECH.set_default_translate(to_lang="en", from_lang="en", name="Samantha")
 
 PROGRESS_FILE = "progress.db"
 
@@ -94,13 +99,17 @@ def get_organized_questions() -> Dict[str, List[Question]]:
     return sections
 
 
-def questions_generator(
-    section: int, randomize: bool
-) -> Generator[Question, None, None]:
+def questions_generator(randomize: bool) -> Generator[Question, None, None]:
+    global prog_section
     sections = get_organized_questions()
-    if section:
+
+    if input("section? y|n: ").lower() == "y":
+        print("\n".join(sections.keys()))
+        prog_section = int(input(f"\nsection number 3...{len(sections)}: ")) - 3
+
+    if prog_section:
         keys = {f"{index}": key for index, key in enumerate(sections.keys())}
-        questions = sections[keys[str(section)]]
+        questions = sections[keys[str(prog_section)]]
     else:
         questions = []
         for sec in sections:
@@ -141,14 +150,10 @@ def exit_handler(*args, **kwargs):
 
 
 def newly_take():
-    global randomize, prog_section
+    global randomize, prog_section, with_voice
+    with_voice = input("want questions to be read? y|n: ").lower() == "y"
     randomize = input("random? y|n: ").lower() == "y"
-    prog_section = (
-        input("section number 0...n: ")
-        if input("section? y|n: ").lower() == "y"
-        else None
-    )
-    return questions_generator(prog_section, randomize)
+    return questions_generator(randomize)
 
 
 def decide_questions():
@@ -164,7 +169,7 @@ def decide_questions():
         else:
             randomize = False
             progress_question = progress_question or 0
-            questions = questions_generator(progress_section or 0, False)
+            questions = questions_generator(False)
             for _ in range(int(progress_question)):
                 next(questions)
             prog_question, prog_section = progress_question, progress_section
@@ -174,10 +179,27 @@ def decide_questions():
     return questions
 
 
+def display_question(question: Question):
+    global with_voice
+    os.system("clear")
+    print(f"{ConsoleColors.OKCYAN.value}{question.section}{ConsoleColors.ENDC.value}")
+    print(f"{ConsoleColors.OKGREEN.value}{question.question}{ConsoleColors.ENDC.value}")
+    if with_voice:
+        SPEECH.default_read_translate(question.question)
+    input()
+    print(
+        ConsoleColors.OKBLUE.value,
+        "\n".join(question.answers),
+        ConsoleColors.ENDC.value,
+    )
+    if with_voice:
+        for answer in question.answers:
+            SPEECH.default_read_translate(answer)
+    input("\n\nSiguiente pregunta -->")
+
+
 def start_quiz(questions: Generator[Question, None, None]):
     global prog_question
-    input("Try to answer questions in depth OK?")
-    right, wrong = 0, 0
     stop = False
     while not stop:
         question = next(questions, None)
@@ -187,28 +209,8 @@ def start_quiz(questions: Generator[Question, None, None]):
             save_progress()
             os.system("clear")
             print("Finished!")
-            print(f"Results:\n    Correct: {right}\n    Incorrect: {wrong}")
-            print(f"Score: {'{:.2f}'.format(100/(right+wrong)*right)} / 100")
         else:
-            os.system("clear")
-            print(
-                f"{ConsoleColors.OKCYAN.value}{question.section}{ConsoleColors.ENDC.value}"
-            )
-            print(
-                f"{ConsoleColors.OKGREEN.value}{question.question}{ConsoleColors.ENDC.value}"
-            )
-            input()
-            print(
-                ConsoleColors.OKBLUE.value,
-                "\n".join(question.answers),
-                ConsoleColors.ENDC.value,
-            )
-            input()
-            veredict = input("Got it right? y|n: ")
-            if veredict.lower() == "y":
-                right += 1
-            else:
-                wrong += 1
+            display_question(question)
 
 
 if __name__ == "__main__":
