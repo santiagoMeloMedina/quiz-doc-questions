@@ -18,10 +18,10 @@ You can create password policies for requirements on password creation or updati
 How do AWS services perform actions on your behalf?
 You need to create IAM roles and assign them to the resources that will perform the actions, for example adding one to an EC2 Instance to access AWS.
 
-How can I make my IAM use more secure?
+What can I use from IAM to make my account usage more secure?
 You can use the IAM security tools, which are report generation by credential reports at the account level on which you can see information about the user credentials like last accesses and status. And access advisor at the user level where you can see information about their permissions and access to services.
 
-What IAM best practices?
+What are some IAM best practices?
 Create strong password policy
 Use and enforce MFA
 One user = One physical user
@@ -50,6 +50,10 @@ There are On-demand instances intended for short term uninterrupted workloads, t
 
 
 
+How to prevent spot instances from terminating?
+You can define a spot block which is a time period during which the spot instance won't be terminated, only in rare occasions it may be reclaimed.
+
+
 How to effectively terminate spot instances?
 When defining a spot instance you can request it as one time or persistence, if it is one time, then when spot instances are interrupted by current price going over maximum defined price, then nothing else happen after interruption, but when they are of type persistence, then the instances are relaunched automatically, so always be sure to first cancel spot instances and finally terminate the instances themselves.
 
@@ -66,13 +70,16 @@ It’s not a good architectural practice, the best strategy is using a load bala
 What are the differences between the ec2 placements groups strategies?
 We have a strategy intended for applications that require low latency and high network throughput (Cluster) with hardware in the same rack and AZ. Applications with the requirement of high availability and critical applications with low tolerance to failure from other racks (Spread) with hardware in different racks and different AZs, with an instance limit of 7 per AZ. And big data applications (Partition) that need a limitless number of instances with up to 7 partitions on each AZ and multiple instances across different racks on a partition.
 
-How can one boot up the instances faster after stopping and starting them again?
+How does an instance connect to a network?
+LOOK AT ENI CLASS AND WRITE THE ANSWER
+
+How can one leverage RAM to bootup instances faster after stopping them?
 There is a feature called Hibernation in which the instance is stopped but it stores RAM’s data on a file on the encrypted EBS (must be encrypted), then the instance is stopped. This allows the instances to not have to boot the OS again since the RAM state is preserved.
 
 
 Section 7. EC2 Instance Storage
 
-What happens if I need more IOPS in my virtualization or a better network performance?
+What service can I use to improve the virtualization (EC2 instances) IOPS and network performance?
 You can use AWS Nitro which is a new virtualization technology that can handle enhanced network, HPC and IPv6, and also can handle up 64k EBS IOPS.
 
 What is the difference between vCPUs and CPUs?
@@ -82,7 +89,7 @@ Can I use an EBS volume on an instance in another AZ from the one it was created
 Yes but only using EBS Snapshot. EBS volumes are network drives that can be attached to one instance at a time (except for some cases) and can be attached to any instance in the same AZ. But when you choose to attach a certain EBS to use its persisted data, on an instance in another AZ you need to make a backup (EBS Snapshot) and use it on the targeted AZ instance. If you are looking for a cheaper option you can move the snapshot to a snapshot archive which is 75% cheaper and can restore it after 24 to 72 hours.
 
 Is there any way to preconfigure my instances with software efficiently?
-You can create your own IAM which already has a user data configuration installed to be used faster.
+You can create your own AMI which already has a user data configuration installed to be used faster.
 
 What if I need better store performance for an instance than EBS?
 Some instances may offer a local instance store which is physical storage hardware connected to the machine the instances are being virtualized on. These can have really high IOPS even to the millions, but the information being stored there is ephemeral since it is going to be lost at instance stop. Therefore this option is for information like buffers or one needs to have a backup for the storage.
@@ -111,7 +118,7 @@ On EBS you have to provision capacity and that will determine billing. On EFS it
 
 Section 8. High Availability and Scalability. ELB & ASG
 
-How can I scale horizontally on AWS EC2 without much effort?
+How can I make my apps adaptable to scaling horizontally?
 You can use ELB(Elastic load balancer) which receives traffic and redirects it to the different instances. It’s fundamental that instances have a /<anything or empty> endpoint that can return 200 when asked by the load balancer so this can redirect traffic to it.
 
 Do I need to have all my load balanced instances receiving internet traffic?
@@ -223,7 +230,7 @@ There's public and private hosted zone, where in a public hosted zone traffic fr
 What types of record types does Route53 support?
 There’s A which maps to IPv4, AAAA which maps to IPv6, CNAME which maps to other hostnames that map themselves to A or AAAA, and there’s NS which maps to named servers on the hosted zone. There’s also other supported types but these are the main ones.
 
-How can reduce traffic on Route53 without reducing the actual number of visits?
+How can one reduce traffic on Route53 without reducing the actual number of visits?
 You can define a high TTL(Time to live) since it’s the time the response with the IP for a DNS will be cached. Since a request is cached then we would be reducing the traffic on Route53.
 
 Can I point in some way to root domains in Route53?
@@ -291,6 +298,8 @@ Section 13: AWS SDK, IAM & Policies
 
 How can I get information about an instance without needing proper IAM permissions?
 You can get the information by going to the http://169.254.169.254/latest/meta-data endpoint from inside the EC2 instance.
+
+
 Section 14: Advances S3 & Athena
 
 How can I secure the permanent deletion of objects on S3?
@@ -361,7 +370,7 @@ It can access S3 buckets and Custom HTTP.
 How does CloudFront work?
 It receives requests, looks them up in the cache and if there is no cached response it makes the request to the origin, stores the response in cache based on the configurations and returns the response to the client.
 
-How does cloudfront allow connection from S3?
+How does cloudfront allow connection from/to S3?
 With origin access identity OAI you can access S3 without it being public.
 
 How to restrict traffic coming to CloudFront?
@@ -422,3 +431,995 @@ Do I always need to use an API for using S3 or EFS?
 No, you can use FTP, FTPS or SFPT with the Transfer family service, which connects to the AWS services with IAM roles and you access them through those protocols. Also can manage users and use Active directory for authentication. It’s highly available, scalable and reliable and you pay per endpoint provisioned per hour plus data transferred in GBs. Can also be integrated with multiple authentication services.
 
 
+Section 17: Decoupling applications: SQS, SNS, Kinesis, Active MQ
+
+What AWS service can I use to decouple my applications?
+You can use SQS which offers a queue system with high throughput (unlimited messages), low latency. It has some limitations like the size of the message (max 256KB) and the retention period is up to 14 days with a default of 4 days.
+
+Is there something to have in mind when consuming messages for SQS?
+There is at least one delivery, that means that the messages can be duplicated occasionally and there’s best effort ordering meaning that messages can come out of order.
+
+What's the cycle of producing and consuming messages from SQS?
+Producer sends the message though the SendMessage API with the SDK, then the message persists on SQS until it’s deleted by being consumed. In a different setting, Consumers poll up to 10 messages at a time from SQS and process them, after consuming  the messages they get deleted by the DeleteMessage API.
+
+How do the messages from SQS get polled by consumers?
+When there’s multiple consumers, the messages get delivered uniquely to the different consumers, but there can be the case where more than one consumer receives the same message, this is where at least once delivery takes place, it’s the responsibility of the consumer to delete the messages.
+
+How is the throughput of processing messages increased?
+By scaling the consumers horizontally, you can use the CloudWatch metric ApproximateNumberOfMessages to trigger ASG to scale out consumers.
+
+Is there a way to specify security policies for SQS?
+SQS Access policies are similar to S3 bucket policies and can be used to allow access to SQS from other services. In terms of accessing SQS through the API then the IAM policies apply the same as with the other services.
+
+How can I encrypt my SQS message?
+There can be encryption at flight using HTTPS API and at rest using KMS keys.
+
+How can AWS services from one account access SQS cross account?
+With access policies for SQS where the statement defines the aws account on the principal field, also these policies are useful to specify which services in the same account have access.
+
+How does SQS know when not to return already polled messages?
+There is a period of time called Message Visibility Timeout, and it’s a property that assures that a message is not returned during that period of time. This visibility is off from the poll of the message until the period of time finishes, in this time the consumer must have processed and deleted the message to avoid duplicates. If the visibility timeout period is too long, you may decrease performance.
+
+How to deal with messages that cant be processed and keep being received?
+There is the attribute of a DeadLetterQueue of a SQS queue and this attribute will correspond to another queue that will receive the messages that are not being able to be processed after a certain amount of times received specified in the MaximumReceives field. This DeadLetterQueue is useful to debug the messages and consumers to investigate problems. To reintegrate the message after fixing problems there’s the feature of Redrive to Source.
+
+How can an SQS wait some time before returning the messages being polled?
+That is the purpose of the DelaySeconds parameter which delays returning messages from when they were created by a producer.
+
+How to decrease the number of requests and therefore latency when polling?
+By doing LongPolling where the poll lasts up to 20 seconds and in that time frame the consumer receives all the messages that are getting to the SQS queue. This feature when polling can be specified with the parameter WaitTimeSeconds.
+
+How does the Request-Response pattern work?
+Producers send messages to a request queue and the consumers of that queue send response messages to individual response queues that the producers will poll from.
+
+What can I leverage from AWS to use the Request-Response pattern?
+There’s the SQS Temporary Queue Client which leverages virtual queues to make the process more cost efficient and also it’s already implemented to use it.
+
+Is there a way to assure that there will be no duplicate messages when polling?
+A SQS FIFO queue can be created and since it is fifo then the message will be returned in order and without duplicating. One thing to consider is that there will be a throughput limit of 300msg/s.
+
+
+How can a system leverage Pub/Sub from AWS?
+By using SNS where there can be up to 12.5million subscribers for a topic and up to 100k topics. Data is not persisted.
+
+Who can be a subscriber of an SNS topic?
+Apart from email and sms and mobile notifications, you can use http endpoints and AWS services like SQS, Lambda and Kinesis.
+
+What security is there on SNS?
+The same as SQS, encryption both at flight(HTTPS) and at rest(KMS), IAM policies to access to the API, and SNS access policies.
+
+What does the Fan-Out pattern consist of?
+It’s the combination of using SNS topics as the receiver from the producers and SQS queues as consumers of the SNS topics, this way the messages can get to multiple queues from which different consumers can act upon the same message, that way decoupling the application.
+
+Can you use the Fan-Out pattern with FIFO queues?
+Yes but you have to use SNS FIFO Topics, and this will carry the same throughput limitations as SQS FIFO queues. Also SNS FIFO Topics can only be subscribed to by SQS FIFO queues.
+
+Is there any processing on the messages sent to the subscriptions?
+There is message filtering where you set JSON policies that will be verified against the messages and according to that sent to the respective subscriptor. An example for this could be filtering the state of a product and according to it send it to placed queues or canceled queues.
+
+What messaging service is there for handling streaming data?
+Kinesis Streams data collects, processes, and analyzes stream data; it consists of 4 different services. Kinesis streams stores data as records containing a partition key and data blob. Data is retained up to 365 days and is immutable.
+
+How does Kinesis collect data?
+It uses Kinesis Stream Data, which consists of Streams where each one contains Shards. Then when producers send records, they get stored in the Shards. Each Shard can receive up to 1Mb/sec or 1000 msg/sec. Records get a sequence number when they are added to a Shard.
+
+How does Kinesis deliver data?
+After data is added to the Shards, it is sent to the consumers in two possible ways, Shared where the throughput is 2Mb/sec per shard for all consumers, and the most expensive and performant Enhanced where the throughput is 2Mb/sec per shard per consumer.
+
+
+
+
+What can connect to kinesis?
+As producers it can be applications using SDK, Kinesis Agent, or Kinesis producer library. As consumers, Kinesis client library, applications using SDK, or managed consumers like lambda, Kinesis Data Firehose, Kinesis Data Analytics.
+
+What types of Kinesis services are there?
+There is Kinesis Stream data that collects data, there’s Kinesis data Firehose that acts as a consumer for streams, as well as Kinesis data Analytics and finally Kinesis Video streams which collects and processes video data.
+
+How can Kinesis Stream Data capacity be provisioned?
+Capacity modes can be set as one of two ways, Provisioned mode where the number of shards is provisioned manually (including scaling), here each shard has in throughput of 1Mb/sec and out throughput of 2Mb/sec that can be either classic or enhanced. And On-demand mode where provisioning as well as scaling is automatic and done on observed throughput peaks, here shards have default 4Mb/sec and is paid per stream, per hour and per GB transferred in or out.
+
+How can stream data be stored into final destinations?
+Kinesis Data Firehose can optionally transform data (by using lambda) and finally write data to the database on batch with batch write, and it’s a near real time service. It can write to S3, Redshift or ElasticSearch. Optionally it can store data on third party destinations (datadog, mongoDB…) or custom destinations with valid HTTP endpoints.
+
+How do Kinesis Firehose charges?
+You pay for data going through Firehose.
+
+How can I leverage SQL to analyze stream data?
+Kinesis Analytics receives data from Kinesis Streams or Kinesis Firehose and performs SQL queries to analyze data and outputs the data again to the Kinesis services, it also can create streams out of the real time queries. You pay the consumption rate and scale automatically.
+
+What if I want to migrate an on-premises messaging system?
+There’s Amazon MQ which combines SQS queues and SNS topics functionalities, it is using Apache ActiveMQ so you will migrate your system using MQTT, AMQP, STOMP, OpenWire, WSS protocols to the service.
+
+How does AmazonMQ work under the hood?
+It runs on a dedicated machine using 2 AZ’s with failover using EFS. It doesn't scale as much as SQS and SNS.
+
+
+
+
+
+Section 18: Containers on AWS: EC2, Fargate, ECR & EKS
+
+How can I store my Docker images privately instead of the public dockerhub?
+Amazon ECR is a private repository where you can store the docker images.
+
+How does Docker operate differently from VMs?
+Docker has the docker daemon instead of the hypervisor and instead of having multiple isolated virtual machines with one app each, there are multiple containers that can connect with each other through networks.
+
+How can you manage Docker containers?
+Amazon ECS is a service where you can manage containers inside ECS Clusters. 
+
+What types of Launch are in ECS?
+To power the clusters you can use EC2 Launch Type to manage and maintain EC2 instances that must run the ECS agent to register to the cluster. Once instances are registered then AWS will start and stop containers in those instances. Alternatively you can leverage Fargate Launch Type which is serverless and you don't need to manage instances, instead you create tasks definitions to run containers and have no detail of where it’s running; to scale just create more tasks.
+
+How do you access other services from ECS containers (for example ECR)?
+You use IAM roles in different ways for the launch types. For EC2 launch type you may use an EC2 role assigned to the instance. And as for giving access to EC2 tasks regardless of the launch type you may create roles for each task in the task definition.
+
+How can I load balance traffic to the containers on ECS?
+Using ALB and for more performant throughput requirements NLB. Older ELB are not recommended and cant be used with fargate.
+
+How to persist data for ECS?
+Using the EFS service mounting file system into the ECS tasks, this way tasks will share the same data. The combination of Fargate and EFS is the serverless combo.
+
+How to scale ECS?
+When using EC2 launch type then ASG can be used for scaling out the instances. But scaling instances is not the same as scaling tasks, and there’s a better way of scaling which is ECS Capacity Provider, which depends on the tasks being created. Also you can scale with CloudWatch alarms based on ECS usage metrics like CPU.
+
+How to maintain tasks active when updating containers?
+The ECS Service Update Screen can be specified two parameters, minimum and maximum healthy percent, with these we assure that while updating, what percentage is the minimum after turning off old instances and what percentage is the maximum after turning on new instances, until all tasks have been updated.
+
+What features does ECR offer?
+It offers image vulnerability scanning, versioning, image tags and image lifecycle.
+
+How can I use my on-premises kubernetes oriented system?
+There’s EKS which you can use to leverage kubernetes since it is a cloud agnostic technology and open source. It’s configured similarly to ECS with EC2 and Fargate launch types. When you use EC2 then you deploy worker nodes for the pods to run.
+
+
+Section 19: Serverless Overviews from a Solution Architect Perspective
+
+What does serverless refer to?
+Serverless used to stand for the use of lambda functions, but the current scope of it goes beyond that by including all cloud computing services that allows the user to avoid handling servers and scaling of resources.
+
+How does Lambda pricing work?
+The service is Pay per request and Compute time, but you have a free tier of 1M requests and 400k GBs (400k seconds for 1GB RAM). You can also provision up to 10GB of RAM which also improves CPU and network.
+
+How can I leverage docker images for problems like dependencies store size while using Lambda?
+With Lambda Container Image where you create a docker image of your lambda and store it on ECR. Then create the lambda from that image. Your image must implement Lambda Runtime API.
+
+What are the Lambda limits?
+They can be separated into Execution and Deployment limits. On Execution there is Memory from 128MB up to 10GB, Maximum execution time of 15minutes, Disk space of 512MB, and concurrent requests of 1000. On deployment there is a limit of compressed files size of 50MB and uncompressed files size of 250MB. For both the Environment variables size limit is 4KB.
+
+How to intercept and act upon request to CloudFront?
+Using Lambda@Edge which is a lambda that can be actioned with 4 types of moments in a request to CDN. Viewer request when request is made to CloudFront, Origin request when CloudFront makes the request to the origin, Viewer response when CloudFront responds to the viewer and Origin response when the origin responds to CloudFront.
+
+
+
+Why would it be useful to use Lambda@Edge?
+To customize CDN content, it can be used for website security, authentication and authorization, tracking and analysis, SEO, intelligent routing, A/B Testing, bot mitigation, dynamic web application, real time image transformation, user prioritization, and many other uses.
+
+What can I use to leverage a NoSQL database?
+There’s DynamoDB which is a non relational database that doesn't need provisioning and can scale massively to millions of requests per second and trillions of rows stored with hundreds of TBs. Is fast and consistent and it has low latency on retrieval, and it has high availability since given replication across AZs, also has a low cost. And Tables can be at a Standard of Infrequent Access class.
+
+What are the limitations of DynamoDB?
+A table can have an infinite number of rows and the maximum size of each item is 400K. The possible data to add is Scalar Types(String, Number, Boolean, Binary, Null), Document Types(List, Map), and SetTypes(String set, Number set, Binary set).
+
+How does DynamoDB pricing work?
+Since there’s no need to provision resources for it, you just specify Read/Write Capacity Mode. There’s two modes, Provisioned mode, here you specify the number of Read and Write Capacity Units (RCU & WCU), and you can also set auto-scaling depending on the usage of the RCUs & WCUs, here it charges you for those two metrics. And On-Demand mode is more expensive but there’s no need to plan capacity, you pay for what you use, a good use case for on-demand mode is for unpredictable workloads.
+
+How can I improve performance when using DynamoDB?
+By leveraging Dax, which is caching DynamoDB results with a TTL of 5 minutes. There’s no need for logic modification.
+
+Why use Dax instead of Elastic Cache?
+Because ElasticCache is a caching service for caching any information, whereas Dax just catches objects results from querying or scanning DynamoDB. So you would use ElasticCache for processed data upon DynamoDB request for example.
+
+What other benefits can Dax offer?
+It allows DynamoDB to deliver up to 10x performance improvement, since it offloads heavy reads and helps prevent the ProvisionedThroughputExceededException.
+
+Can data modification on DynamoDB tables trigger actions?
+DynamoDB Streams is an ordered stream of item modifications. Everytime there’s a modification it can be sent as a stream to Kinesis Data Stream or read by Lambda or Kinesis Client Library applications. There is data retention of 24 hours.
+
+
+How can I reduce latency when using DynamoDB?
+By using Global Tables, tables are going to be replicated across different regions so that they will be accessed from different regions with lower latency. It will be Active-Active replication because applications will READ or WRITE from any region and data will be equally consistent. As a prerequisite DynamoDB Streams must be enabled.
+
+How can I eventually clean my DynamoDB tables?
+The feature TTL Time To Live of DynamoDB allows you to define an expiration time (TTL) attribute for when a certain item will be deleted.
+
+How to query items from a DynamoDB table for attributes other than PK and SK?
+By using Global Secondary Index GSI and Local Secondary Index LSI indexes.
+
+Can I write to multiple DynamoDB tables at the same time?
+Transactions allow you to write to multiple or none tables in one transaction.
+
+How can I trigger Lambdas?
+Directly with IAM permissions, through an ELB or in a fully serverless infrastructure with API Gateway.
+
+What is an API Gateway?
+Is a service that support WebSocker protocol, and can handle versioning, security, authentication and authorization, cache responses, handle request throttling. It can be handled in different environments like dev, test, prod and it’s a way to trigger lambdas but it can also trigger other services. You can also document and import API from documentation with Swagger and OpenAPI.
+
+What services can API Gateway trigger?
+It can trigger Lambdas, internal HTTP rest api, and other AWS services like SQS.
+
+What type of endpoints are there in API Gateway?
+There’s Edge Optimize where requests go through CloudFront Edge locations for improving latency, although the API Gateway is still allocated in one region. There’s Regional where requests are within the same region, and may be optionally combined manually with CloudFront. And there’s Private for accessing API Gateway from a VPC using an interface VPC endpoint, here resource policies must be defined for access.
+
+Is there a limit for API Gateway execution?
+The request can be set up to take up to 29 seconds before timeout.
+
+What type of security are there on API Gateway?
+You can leverage IAM, Custom Authorizers(Lambda Authorizer), and Cognito User Pool. For IAM you can have users or roles with permissions to access the API Gateway, it then handles Authentication and Authorization and it’s done thanks to Sig v4. For Custom Authorizers you create lambda logic to return a IAM policy to API Gateway, so requests will come to the API and enter the logic of the lambda authorizer and then return a response with a policy to the API Gateway to allow or forbid requests to go to destination. And for Cognito User Pools you authenticate with Cognito services (could leverage cognito users, facebook, google or other services to login), and the token returned is then sent in the request to the API Gateway, which will verify it against Cognito and allow or block the request to the destination.
+
+How can one interact with Cognito?
+There are 3 ways to do it. Using Cognito User Pools (CUP) where users sign in with credentials stored in a serverless database in cognito, so you will have a username and a password, or can enable federated identities to login with external services like google, after login you will get a JWT to use in your API Gateway request. Using Cognito Federated Identity Pools, to access directly to AWS Resources from Client Side, where users login through external login services or even CUP, then authenticate to the Federated Identity Pools and it will verify with the external service and then send temporary credentials to the client. Using Cognito Sync to store preferences, configuration or state of the app, it is currently deprecated; you need to use Federated Identity Pools for it. You can store data in datasets of 1MB of size in up to 20 datasets, and there's cross device synchronization, so from any platform.
+
+What can I use to help me create a serverless infrastructure?
+Using SAM (Serverless Application Model) which is a framework to develop and deploy serverless applications with the Lambda, DynamoDB, API Gateway and Cognito User Pool services. You can algo run those services locally with SAM for debugging and can use CodeDeploy to deploy those resources to AWS. The configuration for SAM is done through YML files.
+
+
+Section 20: Serverless Solution Architecture Discussions
+
+How can I temporarily access AWS services without having IAM users?
+By obtaining temporal credentials from AWS STS using the authentication with Amazon Cognito.
+
+
+How can I improve performance when using API Gateway?
+Catching responses at API Gateway.
+
+
+Section 21: Databases in AWS
+
+What are aspects to consider when choosing Database?
+The questions are:
+Throughput based:
+Does it need a lot of reads or write or is it balanced
+Is it high or low throughput
+How does it change, does it need to scale
+
+Storaged based:
+How much data is stored
+How long is data stored
+What's the average data size
+How is the data accessed
+
+Other:
+What is the data durability
+Is the data source of truth
+What latency does it need when accessed (how many users)
+What's the data model, how will it be queried
+Strong schema or flexible
+License cost
+
+
+What types of databases are there?
+RDBMS with RDS and Aurora for tabular data cases (great for joins). NoSQL with DynamoDB(JSON), ElasticCache(key/value), Neptune(Graphs). Object Store with S3 and Glacier (for backups/archives). Data Warehouse (SQL Analytics) with Redshift and Athena. Search with ElasticSearch (JSON) for free text, unstructured searches.
+
+What are use cases for RDS?
+RDBMS/OLTP, performing SQL queries, transactional inserts.
+
+Five pillars for RDS?
+Operations there must be operations done on failovers, maintenance, scaling and application changes. Security must be responsible for setting up KMS, security groups, IAM policies, signin through IAM, and using SSL. Reliability there is MultiAZ for failover. Performance depends on EC2, EBS provisioned, and read replicas. Cost is paid per hour based on provisioned EC2 and EBS.
+
+What are use cases for Aurora?
+Same as RDS but with less maintenance, more flexibility and more performance.
+
+Five pillars for Aurora?
+Operations less operations for the auto scaling storage. Security is the same as RDS. Reliability with MultiAZ is more available than RDS because of the distributed layer (6 replicas each AZ), serverless option and multi-master. Performance with 5x of RDS due to architecture optimization and up to 15 read replicas. Cost paid per hour based on provisioned EC2 and EBS.
+
+
+
+What are use cases for ElasticCache?
+Key/value store with frequent read and less write, store session data for website, cache results for DB queries.
+
+Five pillars for ElasticCache?
+Operations same as for RDS. Security same as RDS but sign in with Redis Auth instead of IAM. Reliability good with clustering, sharding, and multiAZ. Performance sub millisecond performance because of in memory, read replicas for sharding, really good. Cost paid per hour based on usage of EC2 and storage.
+
+What are use cases for ElasticCache?
+Serverless applications with small documents,  distributed serverless cache, and has transaction capability.
+
+Five pillars for DynamoDB?
+Operations no operations needed, its serverless and auto scales if defined. Security all security through IAM policies, KMS encryption and SSL in flight. Reliability has MultiAZ and Backups. Performance is single digit millisecond performance (not quite as much as ElasticSearch but good), Dax for caching reads, performance does not degrade on scale. Cost paid per provisioned capacity and storage, can also pay on demand.
+
+What are use cases for S3?
+Static files, key value store for big files or website hosting.
+
+Five pillars for S3?
+Operations no operations needed. Security IAM, bucket policies, ACL, Encryption and SSL in flight. Reliability with 11 9s durability and 99.99% availability, MultiAZ and Cross Region Replication. Performance scale to 1000s reads/writes per second, transfer acceleration and multi-part for big files. Cost pay per storage, network costs and requests number.
+
+What are use cases for Athena?
+Exploratory work SQL queries on S3 or one time query, serverless queries on S3 like log analytics.
+
+Five pillars for Athena?
+Operations no needed operations since it’s serverless. Security is IAM plus S3 security. Reliability it’s a managed service, uses Presto engine (high performance engine), highly available. Performance queries scales based on data size. Cost paid per query or TB of data scanned.
+
+What are the characteristics of Redshift?
+Based on PostgreSQL used for OLAP (Online analytical processing). 10x performance compared to other data warehouses and can scale to PBs of data. It’s columnar storage. Has high performance because it has MPP(Massively parallel query execution). It has SQL interface to perform queries. Data is loaded from S3, DynamoDB, DMS and other DBs. 
+
+How do nodes work on Redshift?
+It has from 1 to 128 nodes and each node can have a space up to 128 TBs. There are two types of nodes, Leader nodes that handle query planning and results aggregation, and Compute nodes that perform queries and send results to leader node.
+
+How to perform queries without loading data on Redshift?
+That can be done by using Redshift Spectrum. So with a Redshift cluster already available to query, then after starting the query thousands of Redshift Spectrum nodes read data from S3 and perform aggregations and send data to compute nodes of the Redshift cluster.
+
+How to load data into Redshift more securely?
+With Redshift Enhanced VPC Routing which the copy goes directly through VPC instead of going through the public internet.
+
+How to handle disaster recovery (DR) on Redshift?
+It’s done with Snapshots for point in time backups of clusters, and they are stored on S3. These snapshots are incremental so only what's changed is saved. Then snapshots can be restored into new clusters.
+
+How to create Snapshots from Redshift clusters?
+You may create snapshots manually and retain them until you delete them, or create them automatically every 8 hours, or every 5GB on in a schedule, here the retention period is set also. Besides you can set them to be automatically copied into other regions to be restored into clusters.
+
+How to load data into Redshift?
+There are 3 ways to do it. Using Kinesis Data Firehose, using S3 with copy command and this one can be with/without enhanced vpc routing, and using EC2 with JDBC driver and hopefully uploading data in batches (since uploading by row is inefficient).
+
+
+How does Redshift perform against Athena?
+It has faster queries, joins and aggregations thanks to indexes.
+
+What are use cases of Redshift?
+Data analytics, Business intelligence and Data Warehousing solutions.
+
+Five pillars of Redshift?
+Operations like RDS. Security like RDS with also VPC. Reliability auto healing features with cross region snapshot copy. Performance 10x performance against other data warehousing. Cost paid per node provisioned, 1/10 of the cost of other warehouses.
+
+How else can I transform data in AWS?
+Using Glue which is a serverless and fully managed service to extract, transform and load (ETL) data into Redshift. It can extract data for example from S3 or RDS. There is also inside Glue and Data Catalog which is a catalog of datasets composed of metadata of the services to extract data like S3, RDS, DynamoDB or any JDBC compatible database. So Glue Data Crawler obtains metadata from those sources and fills the catalogs tables, and then this information can be extracted by the Glue ETL and processed with Athena, Redshift Spectrum or EMR.
+
+How can I leverage a graph database on AWS?
+Using Neptune, highly available being across 3 AZs and up to 15 read replicas. Point in time recovery and continuous backup to S3. KMS encryption at rest and SSL at flight.
+
+What are use cases for Neptune?
+Databases related to graphs.
+
+Five pillars for Neptune?
+Operations like RDS. Security like RDS plus VPC and IAM Authentication. Reliability with MultiAZ and clustering. Performance is best with graphs, clustering improves performance. Cost paid per node provisioned.
+
+How can you leverage ElasticSearch on AWS?
+Using OpenSearch which is a successor to ElasticSearch. With it you can search any field even partially and that's why it’s commonly a complement to another database. It also has usage for Big data applications. For it you provision a cluster of instances. It comes with Dashboards for visualization (like kibana).
+
+What are use cases of OpenSearch?
+Search or indexing of data.
+
+Five pillars for OpenSearch?
+Operations like RDS. Security with Cognito, IAM, VPC, KMS, SSL. Reliability has MultiAZ and clustering. Performance is based on the ElasticSearch project with PB scale. Cost is paid per node provisioned like RDS.
+
+Section 22: AWS Monitoring & Audit: CloudWatch, CloudTrail & Config
+
+What are the components of CloudWatch metrics?
+They belong to namespaces and each metric can have up to 10 attributes as dimensions like instance id. They also have timestamps and dashboards can be created for it.
+
+How are metrics and EC2 related?
+You can have multiple metrics for EC2 instances every 5 minutes, or every minute with detail monitoring, these metrics can be used to scale ASG.
+
+How can I act upon custom values with monitoring?
+By creating custom metrics, you can push any value using the API PutMetricData, there you will define any namespace, metric, and dimension with the value of your choosing. You can also use StorageResolution API parameter to specify the resolution of the metric to be either Standard every minute, or High Resolution every 1/5/10/30 seconds.
+
+How to visualize metrics data?
+With CloudWatch Dashboards, you can also manage alarms from them. You can change time zone and time ranges of the dashboards and do automatic refresh of 10s, 1m, 2m, 5m, 15m. They can also be shared with people outside without an account through email, 3th parth SSO provider through Cognito. The dashboards cost 3$ per month, but they come 3 with up to 50 metrics for free.
+
+How to access multiple region Dashboards?
+Dashboards are global so you can include graphs from multiple regions and accounts.
+
+How are CloudWatch logs structured?
+There are Log Groups that have an arbitrary name and usually represent an application, inside these groups there’s Log streams that represent instances within an application, log files or containers. You can define log expiration policies. These logs can be sent to S3, Kinesis Data Streams, Firehose, Lambda or ElasticSearch.
+
+What are the CloudWatch Logs sources?
+SDK, CloudWatch Logs Agent, Unified Agent, Elastic Beanstalk from application, ECS from container, Lambda from function logs, VPC Flow specific VPC logs, API Gateway, CloudTrail based on filter, Route53 all DNS queries.
+
+How can I act on logs directly with CloudWatch?
+Using Logs Metric Filter where you filter expressions in the logs and create metrics from it to trigger CloudWatch alarms. Also by using Logs Insights you can query logs and add queries to dashboards.
+
+How to export logs from CloudWatch Logs?
+By using the CreateExportTask API, this way you can export logs to S3 but it has to wait up to 12 hours to become available for export.
+
+How can I export logs near real-time from CloudWatchLogs?
+By using Logs Subscriptions, these are filters applied and sent results to Lambda, or Kinesis Data Firehose, or Kinesis Data Streams, or ElasticSearch. You can aggregate multiple subscriptions from potentially multiple regions and accounts into Kinesis Data Streams.
+
+How to send logs from EC2 to CloudWatch logs?
+Must push logs and for that the instance must have an IAM role.
+How do you push logs using agents?
+There are two different agents, there’s Logs Agent which is the old version and only sends logs to CloudWatch Logs, and the Unified Agent collects additional system-level metrics, collects logs and sends them to CloudWatch logs. It can be configured using centralized configuration leveraging SSM Parameter Store, so all agents can do centralized configuration.
+
+Why use a Unified Agent?
+For collecting metrics with more granularity as you can collect directly on your Linux server / EC2 instance information like CPU, Disk metrics, Ram, Netstat, Processes, Swap Space.
+
+What are alarms used for?
+To trigger notifications upon passing thresholds on metrics. These can analyze sampling, percentage, max, min, etc. You can set a period which represents the length of time to evaluate in the metric for the alarm to be triggered, you can set high resolution custom metrics with 10, 30 or 60 seconds.
+
+What are the states of an alarm?
+There is the OK which means that there are no triggers. INSUFFICIENT_DATA when there is not enough data to make a decision. And ALARM which means a trigger has been placed and a threshold was surpassed.
+
+What are the targets for an alarm trigger?
+There are 3 targets, it can trigger an action on EC2 instances like stopping, terminating, rebooting, or recovering. It can trigger ASG to scale. Or it can send a notification to SNS.
+
+What does EC2 instance recovery consist of?
+Upon the status check which checks the instance(VM) and system(underlying hardware) status the alarm is triggered if the check fails and the instance recovery process is started consisting of placing the same instance(same private, public and elastic ip, metadata and placement group) in another host. It’s good to also send an alarm with SNS to notice that the instance has been recovered.
+
+How can logs trigger alarms?
+As seen already, through Metric Filters it can trigger alarms upon words looked on the logs.
+
+What events are there?
+Event Patterns which are intercepted events from AWS services such as EC2 instance start, S3, CodeBuild failure and so on, even an API call intercepted by CloudTrail. And Created Schedule or Cron events.
+
+How does an event pass information to a target?
+Through JSON payloads that are passed to the target being triggered.
+
+
+What is the difference between CloudWatch Events and EventBridge?
+The Default Event Bus generated by AWS services in EventBridge is the same as in CloudWatch Events but in EventBridge you can create Partner Event Bus for third party services like Zendesk, Datadog, Auth0, Segment and also you can create Custom Event Bus. Rules in EventBridge work the same as in CloudWatch Events. EventBridge builds upon and extends CloudWatch Events.
+
+Do you have to lose or delete events on EventBridge?
+You can archive the events for an indefinite or set period of time and also replay archived events.
+
+How is an application connected to EventBridge helped to know how data is structured?
+EventBridge analyzes events and infer the schema. The Schema Registry generates code for the application to know in advance what the schema is. These schemas also can be versioned.
+
+How can I secure an EventBus?
+With Resource based policies which manages permissions for specific bus and controls who can access or publish events to the event bus even from other regions and AWS accounts.
+
+How to monitor all actions made on AWS?
+CloudTrail is a service where you can inspect all the actions performed/API calls in the AWS account done by SDK, CLI, Console or IAM Users or Roles. All this information can also be sent to S3 Buckets or CloudWatch Logs. It has a retention period of 90 days.
+
+What type of events are there in CloudTrail?
+There are 3 types of events. Management Events which are all events done in the AWS account (for example configuring IAM policy), and these events are logged on CloudTrail by default, also you can separate Read(don't modify. eg. listing resources) and Write(may modify. eg. delete table) events. There’s Data Events which are changes inside resources (like getting, putting, deleting data inside s3 bucket or invoking lambda), and these are disabled logging by default. And finally CloudTrail Insights which are events from certain behaviors that don't correspond to the normal usage of the account (burst of IAM actions, inaccurate resource provisioning, hitting service limits). You need to pay for enabling Data and Insight events.
+
+What does CloudTrail consist of?
+It analyzes management events while it creates a baseline. Then is continuously analyzing to detect unusual patterns. If it finds them then it generates insight events that can be sent to CloudTrail console, S3 buckets or as an EventBridge event.
+
+How to keep CloudTrail events more than the retention period?
+Store the events into S3 bucket and from there you can also analyze them with athena alternatively to find and filter events.
+
+How to audit configuration done in AWS resources?
+You can use AWS Config to record configurations so later on audit changes on them. Also set alerts like SNS notifications when changes occur. This service is per region and one can aggregate the regions and accounts data. The configuration data can be also stored to S3 (and consequently analyzed by athena). The alerts are done by Rules. You pay per configuration item recorded per region and per config rule evaluation per region.
+
+What are the Rules in Config?
+They are entities which are evaluated and triggered but they don't prevent actions from happening, but give you an overview of compliance and make remediations. There are 75 managed rules, but you can also set custom rules using Lambda.
+
+How is data visualized in Config?
+You see which resources are Compliant and can see the configuration history from them. Also by linking CloudTrail you can see the API calls history for a resource.
+
+How to make remediation for non compliant resources?
+By using either SSM Managed or custom Automation Documents which are triggered by Config upon non compliant resources. You can also set a number of Remediation Retries in case the resource is not compliant even after remediation. The custom Automation documents can invoke lambdas.
+
+How to connect data from Config with other services?
+You can trigger notifications upon non-compliant services by triggering EventBridge. Besides you can send all the information from Config (configuration changes and compliance state notification) to SNS.
+
+
+Section 23: Identity and Access Management (IAM) - Advanced
+
+How to grant access to a user outside an account or without permission?
+Using STS (Security Token Service) which are credentials that grant limited and temporary access to resources by assuming roles. The AssumeRole feature is what verifies and links the temporary credentials to IAM roles. Also GetSessionToken feature is when MFA users or account root users need a token to access. There are various types of assuming roles for different situations.
+
+What types of AssumeRole are there?
+There is AssumeRole which works within your own account(for enhanced security) or cross account. There is AssumeRoleWithSAML for users logged with SAML. And there is AssumeRoleWithWebIdentity for users logged with IdP (Not recommended, instead use Cognito).
+
+
+What does AssumeRole consist of?
+After defining IAM Roles and the principals that can access it, by using STS, users attempt to retrieve the temporal credentials, STS checks IAM and then accordingly returns the credentials lasting from 15 minutes to 1 hour.
+
+What does the SAML 2.0 Federation consist of?
+It can provide programmatic access or access to the AWS console by the following processes. For programmatic access, the users request through the client to IdP, the IdP then authenticates uses with an LDAP based identity store, and it then sends the client the SAML assertion, with this the client calls the AssumeRoleWithSAML to STS and it returns the temporary credentials. For console access, the user browses to IdP, the IdP then authenticates same as the other case and returns the SAML assertion, then the client posts the SAML assertion to sign-in URL of AWS SSO endpoint, and this consequently requests the credentials to STS, when credentials are returned then the endpoint validates and sends redirect to the client and the client is redirected to the console.
+
+What does SAML 2.0 Federation with ADFS (Active Directory FS) consist of?
+The same process as with SAML 2.0 Federation but in the authentication part instead of the IdP checking the LDAP bases identity store, ADFS will check the AD identity store and authenticate the user.
+
+What are the characteristics of SAML 2.0 Federation with AWS?
+There must be trust set up between IAM and SAML both ways. It enables web based and cross domain SSO. SAML is the old way of doing things, the new way is using SSO (Single Sign On) Federation.
+
+What if the Identity provider is not compatible with SAML 2.0?
+Use a Custom Identity broker which upon request will talk to the identity store for authentication, and then it will talk to STS to get the credentials and return them to the user.
+
+What does the WebIdentity Federation consist of?
+Client logs in with third party services (Facebook, Google, etc). Then it gets back a token and exchanges it in STS with AssumeRoleWithWebIdentity which will return the credentials, now the client can access the AWS resources. This is not the recommended way, instead it is recommended to use Cognito.
+
+What does the WebIdentity Federation with Cognito consist of?
+Client logs in with third party service (Facebook, Google, etc) and gets back a token. This token is exchanged on Cognito Federated Identity which will verify the token and get credentials from STS to return them to the client. This way Cognito is at the center of Identity federation.
+
+What is Active Directory?
+Is a service from Microsoft which is a database of objects like users, accounts, computers, printers, file shares, security groups and offers centralized security management to create accounts and assign permissions. The objects are organized in trees and forest group trees.
+
+How does AWS offer Active Directory services?
+It offers 3 Directory services. They are AWS Managed Microsoft AD. Which is the same AD as on premise and supports MFA, with it you can set your on premise AD to trust AWS managed AD and viceversa and this way users can log either way and access everything from both ADs. There’s AD Connector which is a Directory Gateway (or a proxy) and provides support for MFA and it allows users to authenticate through the connector to access on-premise AD. And finally there’s Simple AD which is an AD-compatible managed directory and cannot be joined with an on premise AD, with this you can join the AD from EC2 instances using Windows.
+
+Why use AWS Organizations?
+It is a way to have consolidated billing in a single account from multiple accounts, isolate resources in different accounts, and be compliant with a certain strategy. You can also benefit from discounts on aggregated usage of resources. While isolation services, you can still centralize logs like sending CloudTrail to an S3, or sending CloudWatch logs to a central account. You can also define cross account roles for admins.
+
+What is the structure of Organizations?
+There is a master account which governs the Organization and there are member accounts. There are entities called OU(Organizational Units) that serve the purpose of organizing the organization. You can have multiple OU inside the organization and also OUs inside other OUs. Inside the OUs there will be member accounts. Now you can set SCP (Service Control Policies) to the Organization, to accounts and to OUs.
+
+What are SCPs?
+These will define rules of whitelisting or blacklisting IAM actions. The SCP doesn't apply to the master account and doesn't affect service-linked roles, they also have to specify explicit Allow since they don't allow anything by default.
+
+How to move accounts between Organizations?
+For a user to be moved to another organization, it must be deleted from its current organization, sent an invitation from the destination organization, and accept the invitation. And If you want to move the master account, then all the member accounts must be deleted from the organization, the organization must be deleted, and invite the master to the new organization.
+
+What are IAM conditions?
+They are conditions used on policy statements to restrict or give more specification to the policy, for example aws:SourceIp, aws:RequestedRegion, restriction on tags, force MFA.
+
+
+What is the difference between using IAM Roles and Resource based policies?
+It’s true that users can access resources like S3 by assuming roles, but once a user assumes a role it loses the permissions it had before assuming it. So you would like to use Resource based policies for services S3, SNS, SQS when you don't want the users to lose the permissions they own.
+
+How to give a narrowed window of permissions on IAM?
+For security reasons, you can define IAM Permission Boundaries to users, groups and roles which are boundaries assigned to those entities that describe what permissions can be granted. For example is the permission boundaries set that the actions allowed for a user are s3:*, and there there's a policy saying it has ec2:*, then the latter is not valid because it is not inside the boundaries.
+
+
+What is the order of verification of permissions?
+
+
+How can I connect to resources in another AWS account VPC?
+The account owners with the VPC and resources can use the RAM (Resource Access Manager) service. With it one can share a VPC to accounts, OU or organizations and that way sharing subnets among many other services. Multiple accounts can then share resources, but only the owners of the resources can view, update, delete their resources.
+
+What are the benefits of SSO (Single Sign On) on AWS?
+With it you centrally manage Single Sign On to third party applications. Besides it supports SAML 2.0 and integration with on-premise AD. On top of it you get centralized permissions management and auditing thanks to CloudTrail. It is also integrated with organizations.
+
+
+
+What is the difference between AssumeRoleWithSAML and AWS SSO?
+In the process of obtaining credentials the client needs to communicate to the IdP and then communicate with STS to get the credentials in the case of AssumeRoleWithSAML. But with SSO you just request credentials to SSO and it authenticates with the SAML 2.0 compatible identity store and returns the credentials.
+
+
+Section 24: AWS Security & Encryption: KMS, SSM Parameter Store, CloudHSM, Shield, WAF
+
+What types of encryption to know for the exam?
+At flight encryption, server side at rest encryption, client encryption, and envelope encryption.
+
+When is data encrypted/decrypted on server side encryption at rest?
+When data is encrypted server side at rest it means that data is encrypted before being stored and decrypted before being sent. For example EBS uses a data key to encrypt data upon receiving it, and when requested it decrypts the data using the same data key and sends it.
+
+How can you manage your encryption keys?
+Using KMS which helps control access to data by managing keys and it’s fully integrated with IAM for authorization. It is integrated with a lot of AWS services. It manages CMKs (Customer Master Keys). It’s paid per calls to the KMS API. CMKs can be created, enabled, disabled, rotated (also automatically rotated). You can encrypt up to 4KB of data per call (> 4K using envelope encryption).
+
+What types of CMK are there?
+There are 2 types, Symmetric (AES-256 keys) which is widely used being a single encryption key used to encrypt and decrypt and services integrated with KMS use it, so one can never access the key unencrypted, but must call the KMS API. And Asymmetric (RSA & ECC key pairs), where there is a public and private key where the public key can be downloaded and used to encrypt data (use case for when one cannot access KMS API) but the private key cannot be accessed.
+
+How can you use CMK?
+There are 3 types of usage. One is AWS Managed Service Default CMK (free of charge). Another is using User Keys created in KMS. And the last one is using imported User Keys. (Both created and imported costs 1/month).
+
+How can a user access KMS?
+After being allowed by Key Policy, and IAM Policy to make the API call.
+
+Can I use the same KMS key when copying encrypted data across regions?
+Since KMS keys can belong to only one region then when copying encrypted data with KMS keys across regions, a new key in the destination region must be used to reEncrypt the data in the new region.
+
+What are Key policies?
+They are policies similar to S3 bucket policies but they differ in that Key policies are required to control access (you cannot without them). And there is a Default KMS Key policy created if there are no provided KMS Key policies which gives complete access to the root user to the entire account. And also there are Custom KMS Key policies that define who can access and administer KMS keys (users and roles), and with IAM you define who can access the services and to which keys.
+
+What does the process of copying snapshots across accounts consist of?
+First you create a snapshot encrypted with your CMK, then attach a Key policy which authorizes the cross-account access and share the encrypted snapshot. On destination create a copy of the snapshot and encrypt it with the account KMS Key and finally create the volume from the snapshot.
+
+How does automatic CMK key rotation work?
+You can enable automatic rotation only for customer managed CMK (not AWS managed). And this rotation is every 1 year. When it rotates the CMK ID is the same but the backing key changes (key data) and previous keys are kept active for decryption of old files.
+
+How does manual CMK key rotation work?
+Used when you cannot enable automatic rotation (for example for asymmetric CMK). When you rotate it manually then you create a new CMK and therefore the CMK ID is changed but you conserve the alias, so that your application doesn't know it's a different key. So when rotation manually you UpdateAlias to point to the new CMK ID. This manual rotation can be done more granularly (every 90, 180 days, …).
+
+How to store configurations and secrets?
+Using SSM Parameter store which is a serverless service, scalable and durable. It can optionally use KMS encryption and has version tracking. It has integration with CloudWatch notification and also integration with CloudFormation.
+
+What is the structure of SSM parameters?
+They work with paths as if it was representing a folder structure so there is a hierarchy according to the paths.
+
+How long do SSM parameters last?
+You set a TTL for update or deletion and can also set notifications around that expiration time. For example notifications that it has expired or how long until it expires. These are defined by policies, and you can define multiple policies at a time.
+
+What other way of storing secrets is there?
+Using Secrets Manager which is focused on storing secrets with the ability of forcing rotations every X days. It also has integration with RDS (one of the things it’s used for) and can automate the generation of secrets using Lambda. The secrets are encrypted using KMS. It’s paid per secret per month and per API calls.
+
+What are differences on storing secrets between Secrets Manager and Parameter Store?
+On Secrets Manager you can automatically rotate secrets and link them to Lambda functions to do so. And also integrate with RDS.
+
+How can I use encryption a little more privately without AWS managing everything?
+Using CloudHSM which is a service that provisions dedicated hardware for you to do encryption. This way users manage the software and AWS provisions dedicated software (different from KMS where AWS manages everything). It supports symmetric and asymmetric encryption and has support from Redshift for database encryption and key management. HSM devices are FIPS 140-2 Level 3 compliant (unauthorized people cannot access). It has SSL/TLS Acceleration. It also supports MFA.
+
+What is a use case for CloudHSM?
+When doing SSE-C encryption. In CloudHSM there is only customer managed CMK.
+
+How available is CloudHSM?
+It is highly available and durable since it provides MultiAZ so clusters can be in different AZs and communicate with each other.
+
+How does access and authentication work for CloudHSM?
+Different from KMS which uses IAM, in CloudHSM you create users and manage their permissions.
+
+How to protect against DDoS attacks?
+AWS activates the standard version of Shield service to every customer, which provides protection against attacks such as SYN/UDP Floods, reflection attacks, and layer 3/layer 4 attacks. There is another tier version of Shield service called advanced, and it charges 3k per month but it’s more sophisticated, protecting many AWS services, and providing 24/7 support and reimbursing money spent on resources given a DDoS attack happened.
+
+How can you protect your application against web exploits?
+Using WAF (Web Application Firewall) which acts at layer 7 and works only for ALB, API Gateway and CloudFront. The way it works is by defining Web ACL (Web Access Control List).
+
+How can Web ACLs at WAF be defined?
+One cat sets rules checking IP addresses, HTTP headers, HTTP body or URI strings. Also there is protection against SQL injection and XSS. You can also set size constraints (size of a query) and geo-matching to block countries. And an alternative to protect against DDoS attacks by Rate-based rules (count occurrences of events by IP even).
+
+How can I manage all security services in a more centralized way?
+With Firewall Manager you can manage your rules for all accounts inside an Organization. This way then managing WAF rules, AWS Shield Advanced, and Security groups for EC2 and ENU resources in VPC.
+
+Is there an intelligent protection service?
+There is GuardDuty which is an intelligent thread discovery for protection which uses machine learning algorithms to analyze your accounts data to detect anomalies. It can also protect against CryptoCurrency attacks (it’s dedicated to do so).
+
+How does GuardDuty work?
+It receives data from CloudTrail Events, VPC Flow logs, DNS logs and Kubernetes Audit logs and with machine learning analyses the accounts behavior, and if something is not right then uses CloudWatch Events to trigger notifications like with SNS and Lambda.
+
+How to detect vulnerabilities in my systems?
+Using AWS Inspector which checks both EC2 and ECR to detect OS vulnerabilities and network unintended accessibility. It then reports findings to AWS Security Hub and sends the findings to EventBridge. On top of this gives a risk score associated with the vulnerabilities.
+
+How does Inspector detect vulnerabilities?
+It leverages SSM Manager agent to analyze EC2 instances and scans package vulnerabilities on ECR docker images and compares against a database of CVE (Know database of vulnerabilities).
+
+How to protect personal information?
+Using Macie which is a security and privacy service that uses machine learning and pattern marching to discover PII(Personal identifiable information) from S3 buckets, analyze it and notify EventBridge to integrate with other services.
+
+
+What does the shared responsibility model look like?
+
+
+
+Section 25: Networking - VPC
+
+What is CIDR?
+It is the Classless Inter-Domain Routing and it’s a method to allocate IP addresses. For it you will have an IPv4 with the following structure X.Y.W.Z/mask and the mask number will represent how many IPs will be available in the IP range.
+
+What are some examples of CIDR?
+The following examples have the resulting range of IPs:
+10.0.0.0/16-> 10.0.0.0 - 10.0.255.255 -> 65536 IPs
+196.168.0.0/23 -> 196.168.0.0 - 196.168.1.255 -> 512 IPs
+
+What are the established blocks of IPv4 addresses for private use?
+Big networks: 10.0.0.0 - 10.255.255.255 (10.0.0.0/8)
+AWS default VPC: 172.16.0.0 - 172.31.255.255 (172.16.0.0/12)
+Home networks: 192.169.0.0 - 192.168.255.255 (192.158.0.0/16)
+
+What VPC do new AWS accounts get assigned?
+They have a default VPC which has internet connectivity thanks to an internet gateway that gets created and assigning 0.0.0.0 IP on the routing table to that internet gateway. Also 3 subnets get created each with 4091 IPs available.
+
+How many VPCs can an AWS account have?
+An account can have up to 5 VPCs per region (this is a soft limit), and up to 5 CIDR per VPC. Also for the CIDR each can have a minimum size of /28 and a maximum size of /16. And the IP addresses that VPCs can take must be contained inside the IPv4 ranges for private use. CIDRs should not overlap with other VPCs or networks.
+
+What are Subnets inside a VPC?
+Subnets are sub ranges of IPs and can be either public or private. AWS reserves 5 IP addresses from these ranges so one must subtract 5 to the number of available IP addresses in the CIDR to calculate if the amount of IPs we need is met. The reserved IP addresses are used for:
+Network access
+VPC router
+Mapping to Amazon provided DNS
+Future use
+Network broadcast access (AWS does not support broadcast in a VPC)
+
+What is an IGW (Internet Gateway)?
+It allows VPCs to connect to the internet and the relationship between VPC and IGW is 1:1, it must be created separately from the VPC to be attached to. It scales horizontally and is highly available and redundant. In order to access the internet, there must be a Route table defining that any IP destination traffic will be sent to the IGW.
+
+How to make Subnets be either private or public?
+By explicitly associating them with Route tables that either receive traffic from anywhere to an IGW in the case of public subnet, or Route tables that just receive traffic from certain IP ranges and don't have a IGW target.
+
+How to SSH into a private Subnet?
+Using a Bastion host which is an EC2 instance inside a public subnet, that has a security group attached which is accepted and can talk to the security group attached to the instances in the private subnet. Connect to the Bastion host through ssh and then from there into the private subnet instances also through ssh.
+
+How to enable an instance in a private subnet to talk to the public?
+There’s a way using a NAT instance although it is not a recommended option since it must considerably be configured and is not highly available. The newer alternative to do so it’s using NAT Gateway which is a managed service and it’s highly available within AZ.
+
+What does a NAT instance consist of?
+It is an instance inside a public subnet with an Elastic IP attached to it. The routing table of a private subnets point to this NAT instance when they want to talk to the public. When a request is made from an instance in the private subnet, the NAT instance receives the request and assign the ElasticIP address as the source IP of the request sends it to the destination, and when the destination responds to the ElasticIP then the NAT instance changes the Destination IP as the instance IP in the private subnet. In order to do this the NAT instance must disable Source/Destination Check since it’s changing source and destination IPs.
+
+What is the difference between a normal EC2 instance and a NAT instance?
+The NAT instance has an Elastic IP attached and Source/Destination Check disabled. And the Route tables of the private subnets route traffic to the NAT instance. Also NAT instances have preconfigured AMI available.
+
+What are the characteristics of the NAT Gateway?
+Since it’s a highly available within AZ, higher bandwidth managed service then there is no need to configure instances or create security groups. It’s paid per hour and per network usage. It requires an IGW. It has 5GBs bandwidth which automatically scales up to 45GBs. In order to supply multiple AZs (to be fault tolerant) you have to create multiple NAT Gateways (one per AZ).
+
+How to manage DNS hostname resolution inside a VPC?
+You have to have a DNS server inside the VPC which can be a custom DNS server (NOT the recommended option), or enabling the setting enableDnsSupport which when enabled(it’s enabled by default), Route53 Resolver DNS resolution is used and the traffic from the VPC instances will query Amazon provider DNS server for hostnames’ IPs (queried either at reserve VPC DNS IP or 169.254.169.253).
+
+How do EC2 instances get a DNS hostname?
+When created inside the default VPC, the enableDnsHostnames setting is enabled by default, which in conjunction with the enableDnsSupport setting enabled will assign a hostname to the instance. In the case of a newly created VPC, the enableDnsHostnames setting is disabled by default.
+
+How to assign a DNS hostname to an EC2 instance inside a private subnet?
+You need to have a Private Hosted Zone for which you need to enable both enableDnsSupport, enableDnsHostnames settings. With it now instances in your VPC can get the private IP of the instance through resolving its DNS hostname using Route53 Resolver.
+
+How to add security for traffic coming into the subnet?
+Using NACL (Network Access Control List) which acts as firewalls in front of subnets. There can be one NACL per subnet. New subnets get assigned the default NACL. The NACLs define rules where everything is denied by default. The default NACL allows everything from anywhere both inbound and outbound.
+
+What is the difference between security groups and NACLs?
+NACLs are in front of subnets and not instances, and they are staless (different from sg which are stateful) meaning that a request is verified both inbound and outbound since it doesnt save a state. In the case of security groups, once a request comes inbound and is allowed, then it's outbound it’s allowed without verification and viceversa. Also NACLs support both ALLOW and DENY rules different from security groups that only support ALLOW rules.
+
+How does NACLs rules work?
+You define rules with a number, an effect and an IP, and the first rule match will drive the decision, so lower numbers have more priority than higher numbers. There is a default definition of * which deny everything outside the rules. For example 100-ALLOW and 200-DENY the result will be ALLOW because it has a lower number.
+
+
+In an HTTP request what is the source port of the client for the response to arrive at?
+When doing HTTP requests a temporal port gets open to receive the response and that is called an Ephemeral port which depending on the operation system, a random number from a specific range gets chosen. For many Linux Kernels is 32768-60999 and MS Windows 49152 - 65535.
+
+
+What is the problem with Ephemeral ports and NACLs?
+Given that NACLs are stateless then when the HTTP response arrives through the Ephemeral port then the NACL may not have rules configured for it. This is why one must configure the ephemeral port ranges into the NACL well.
+
+How to troubleshoot connectivity between two entities?
+Using Reachability Analyzer which is a network diagnostics tool that analyzes connectivity between two endpoints which may be even in different VPCs. It does it by analyzing the configuration of all the steps of connection and not by sending packages. When it identifies that they are not reachable then it identifies what are the blocking components. In this opposite case when it identifies that it is reachable then it produces hop-by-hop details of the network path. It’s paid per analysis.
+
+How can you connect VPCs to talk to each other?
+Using VPC Peering which can connect VPCs cross account and cross region. It is not transitive for the connection between every VPC pair that wants to communicate must be established. And CIDRs must not overlap. Also routing tables must be updated to update connection, so the CIDR destination will have to go through the peering connection for all routing tables (VPC-1 connects to VPC-2, then specifies VPC-2 CIDR as destination on routing table through peering connection, and VPC-2 does the same). You can also reference security groups from other accounts in the same region in a peered VPC.
+
+How to access AWS services from within VPC without going through the internet?
+Using VPC Endpoints, which is a more efficient way since your instance requests don't need to go through the internet to get to the AWS services. This is especially useful to connect instances in private subnets to AWS services since in order to do it through the internet you would need NATGateway, IGW and the performance wouldn't be as good. VPC Endpoints are redundant and scale horizontally. There are different types of VPC Endpoints.
+
+What types of VPC Endpoints are there?
+There are 2 types, one is the Interface endpoints which provide an ENI (that must be attached to a security group) and can connect to most AWS services. And the other is Gateway endpoints which must be defined in the routing table and can only connect to DynamoDB and S3.
+
+How to monitor traffic from VPC?
+Using VPC Flow Logs which are logs of the requests that go through VPC, Subnets and ENIs. This information can be sent to S3 or CloudWatch Logs and analyzed with Athena or CloudWatch Logs Insights. It can also capture logs from managed interfaces like ELB, RDS, ElasticCache, Redshift, NATGateway, Transit gateway and others.
+
+What are the components of a log in VPC Flow Logs?
+It is based on traffic so it takes the information: version, account-id, interface-id, srcaddr, dstaddr, srcport, dstport, protocol, packets, bytes, start, end, action and log-status.
+
+How to troubleshoot SG and NACL issues with VPC Flow Logs?
+When there is an inbound request, and there is an inbound error, so the inbound traffic log can be seen with the action REJECT in VPC Flow Logs, then it means that either the SG or the NACL is blocking connection, but in the case that in the same request the inbound is ACCEPT and outbound is REJECT then it means that the problem is the NACL because the SG is stateful. This is a use we can give the VPC Flow Logs.
+
+How to securely connect VPC to on-premise server (Corporate Data Center)?
+By using Site to Site VPN connection leveraging VGW (Virtual Private Gateway) and Customer Gateway which use VPN connection. So basically the VGW will be placed on the AWS side and the Customer Gateway will be placed on the customer (on premise) side and a VPN connection will occur between these two. The Customer Gateway is software or a physical device on the customer side of the VPN connection.
+
+
+
+How to connect to a private Customer Gateway with a VGW?
+In this case we need to use the IP of the NAT device of the Customer Gateway. If it were to have a public IP then we would just set up the public IP for the VPN connection. After setting the ip, Route Propagation must be enabled for the VGW on the subnets Route table.
+
+How to have multiple Customer Gateways talking over VPN?
+With VPN CloudHub which is a low-cost hub-and-spoke model for primary or secondary network connectivity between different locations. To set it up you must connect one central VGW to all the Customer Gateways and then setup dynamic routing and configure routing tables.
+
+How to connect remotely with a private connection to a VPC?
+Using DX (Direct Connect) which is a service that allows one to connect privately to a VPC and into a private subnet without using the internet. With this we can obtain higher bandwidth throughput and a more consistent network. It supports different types of connections.
+
+How does DX work?
+AWS Direct Connect Location will have cages called AWS Direct Connect Endpoint and Customer/partner router (which is a rented cage). Then from the on-premise (corporate) network we connect to those cages and from the Direct Connect Endpoint the Direct Connect Location will connect to a VGW through a Private Virtual Interface. This is why you need to have a VGW setted in the VPC. If you want to connect to services like S3 or EC2 then use the same connection but instead of connecting to a VGW you connect directly to the AWS services through a Public Virtual Interface.
+
+How to set up DX for more than one VPC (possibly more than one region)?
+By using Direct Connect Gateway where you use the same seen connection but instead of connecting to a VGW you connect to the Direct Connect Gateway using also the private virtual interface and from there to the VPCs using the private virtual interface as well.
+
+What type of connections does Direct Connect support?
+It supports 2 types of connections, they are Dedicated and hoster. In Dedicated it goes from 1 to 10GBs capacity and has physical ethernet port dedicated, requests are done to AWS and they are completed by Direct Connect Partners. In Hosted it goes from 50, 500MBs to 10GBs and requests are made via Direct Connect Partners, you can also add or remove capacity on demand. Connections in both take around 1 month to be established.
+
+How to encrypt DX connections?
+By placing a VPN connection between the Direct Connect Location and the remote on-premise router.
+
+How to get a resilient DX connection?
+For critical workloads you can get High Resiliency by setting one connection at multiple locations, so connecting the DX to multiple Direct Connect Locations and each into the on-premises routers. And for Maximum Resiliency you set multiple connections at multiple locations so connecting to multiple devices inside each location.
+
+How to expose services in a VPC to other VPCs?
+The most efficient way to do it is by using Private Link or Endpoint Services. It is a scalable service where you can expose your VPC services to many other (1000s) VPCs. And the connection goes through the AWS private network.
+
+How does Private Link work?
+It requires an NLB or an GWLB and an ENI. This way the connection will be established between VPCs using Private Link. First the host VPC exposes its services through an NLB (NLB can be connected to an ALB), and the Private Link points to this NLB. Now the VPC that wants to access the services just connect their ENI to the Private Link. And if on-premise (corporate) servers want to connect they just use DX and connect to the Private Link through a VGW.
+
+Why use Private Link, instead of going through the internet and VPC Peering?
+Because it's more secure and easier to manage access given that it goes through AWS private network and it serves the purpose of connecting multiple (1000s) VPCs to a VPC services. Also with peering, you connect two VPCs whereas in Private Link you can just expose specific services.
+
+What is ClassicLink?
+It’s a deprecated service which used to allow users to connect VPC to EC2-Classic instances (also deprecated). (This may be a distraction in the exam).
+
+How to connect in a peer manner with multiple VPCs more easily?
+Using the Transit Gateway service which is a regional resource to improve topologies by offering a point of connection (transitive peering, hub-and-spoke star) for multiple peer connections (1000s) and also Direct Connect Gateway and VPN connections. You can also use Route Tables to limit the connections in the network. It supports IP Multicast. It can also be shared with RAM (Resource Access Manager) for example sharing a DX connection connected to a Transit Gateway between two accounts.
+
+How does Transit Gateway increase throughput for VPN connections?
+By leveraging Site to Site VPN ECMP (Equal-Cost Multi-Path routing) which allows forwarding packages over multiple paths. This way you have 2 tunnels for each connection, one going forward and one backwards. And you can leverage multiple pairs of these VPN tunnels connecting to the Transit Gateway which will increase bandwidth. So on top of having all VPCs connecting to a single Transit Gateway, the bandwidth and throughput with the tunnels is increased. It’s paid per GB of processed data in the Transit Gateway.
+
+How to monitor/inspect/troubleshoot traffic without disrupting it?
+Using Traffic Mirroring which is a service that captures traffic of an ENI, replicates it and sends it to another ENI or NLB. The source (ENI) and targets (ENI or NLB) have to be in the same VPC or must have VPC peering.
+
+What can one use the IPv6 of an instance for?
+It can be used to access the internet like the IPv4. One cannot disable having an instance IPv4 but an instance could have a private IPv4 and a public IPv6.
+
+What to do when IPv4 IPs are scarce and can no longer launch EC2 instances?
+Just create a new CIDR and you get another range of IPs.
+
+How to enable IPv6 in your VPC?
+By creating an IPv6 CIDR.
+
+How to provide internet access to a private subnet instance without NAT Gateway?
+Using an Egress-only Internet Gateway which is a service that works similar to a NAT Gateway but for IPv4 and it acts as an Internet Gateway. So with this service a private instance can go to the internet through its IPv6 but only outbound so no connections can come in. So you could either use the IPv4 connected to a NAT Gateway and it connected to an Internet Gateway, or just have the IPv6 connected to the Egress-only Internet Gateway.
+
+
+How does networking cost work?
+Ingress traffic is FREE, and communicating over the same AZ through Private IP it's also FREE. Communicating between different AZs has a cost ($0.01) and communicating between regions also has a cost and is more expensive ($0.02). Finally communicating through the internet is the most expensive ($0.02 example between AZs through the internet). 
+
+What are good architectural decisions to save money?
+Take aways are:
+Using Private IPs communication is cheaper and better for performance
+Using same AZs is cheaper but comes at the cost of availability
+Keep operations inside AWS to minimize Egress traffic cost (which is expensive)
+Choose Direct Connect locations co-located in the same AWS-Region to lower egress costs
+Use services that have added costs but can save cost at the long run
+Section 26: Disaster Recovery & Migration
+
+What are important metrics for Disaster Recovery?
+One must be aware of the RPO (Recovery Point Objective) and RTO (Recovery Time Objective). For RPO it represents how often you run backups and this will guide how much data will be lost when a disaster occurs, since the amount of data loss is the data that was lost from the RPO to when the disaster occurs. For RTO is when the disaster is recovered, and the time between the disaster and RTO is the downtime. You must aim to lower RPO achieving the least of data loss, and lower RTO achieving less downtime. There are strategies to use for Disaster Recovery.
+
+What are the strategies used for Disaster Recovery?
+There are 4 strategies. Backup and restore which consist of backing up the on-premise data to AWS, so for example using Storage Gateway to S3 or Snowball to Glacier, or in the case of AWS Cloud data creating snapshots or AMI to be restored; this backup and restore is cheap but has a high RTO, because backups are done every often. Pilot light consists of having a small version of the app including the critical parts always running in the cloud, and when disaster occurs, point to that and start turning on the rest of the components; this pilot light is faster than backup and restore since systems are already up to deal with disaster. Warm Standby consist of having the full system (not just critical parts) running but without the scale of production, so at a minimum size, and once disaster occurs just point to it and scale to production size; this will have faster RPO and RTO but it will come at a cost since there’s additional system running. MultiSite/HotSite is similar to warm standby but at production scale so there’s no need to scale on disaster, this is an active/active setup; this alternative is the most expensive but has the higher RPO and RTO. The last alternative is to have all in AWS and have it Multi Region, so you can replicate databases globally.
+
+What is a simian-army used by Netflix?
+Consists of having random instance termination on the production environment to test Disaster Recovery.
+
+How to migrate data from on premises databases?
+Using DMS (Database Migration Service) which is AWS software to securly migrate databases. It supports continuous replication using CDC(Change data capture). It can migrate homogeneous (same db engine) or heterogeneous (different db engine) databases, so for example it can migrate from on-premise postgres to RDS postgres or even on-premise oracle to Redshift. It can have as sources on-premise databases, Azure SQL, RDS, Aurora, Amazon S3; and as targets on-premise databases, RDS, Redshift, DynamoDB, S3, ElasticSearch, Kinesis Data Streams, DocumentDB.
+
+How does DMS migration work?
+You need to have an EC2 instance setted up running DMS software, and this instance will be obtaining data from the source database and replicating it into the target database. While doing this the source database remains available.
+
+How to deal with different database schemas when migrating heterogeneously?
+DMS can use SCT (Schema Conversion Tool​) which converts one Schema to another to migrate to a different engine. It doesn't need to be used when migrating to the same engine. For this the source database first uses SCT to convert the data schema and then DMS takes this converted data on continuous replication.
+
+How to make DMS highly available?
+Using Multi AZ which uses a standby instance in another AZ for availability.
+
+How is DMS structured?
+You created DB migration tasks which are composed of a replication instance, a source endpoint and a target endpoint.
+
+How to use Amazon Linux 2 AMI on premise?
+You can download as a VM on .iso format to set up the VM on-premise, even use user data.
+
+What to use to plan migration from on-premise?
+Using Application Discovery Service which gathers information about the on-premise servers to plan migration. Tells server utilization and dependency mappings. You can track the migration with AWS Migration Hub.
+
+How to migrate on-premise servers to AWS?
+By using SMS (Server Migration Service) to do incremental replication(ongoing replication) of on-premise live servers. You replicate the volumes directly to AWS.
+
+How to move large amounts of data from on-premise to AWS?
+Using DataSync which is a service that serves the purpose of moving large amounts of data through the NFS or SMB protocol, so moving data for services lik S3, EFS and FSx. The replication is scheduled (not continuous) hourly, daily or weekly. You can also set a bandwidth limit for when bandwidth increases.
+
+How does DataSync work?
+You must set a DataSync agent into the server you will transfer that from, and load the data into DataSync though it, and from DataSync to the S3, EFS, FSx services. In the case of transferring EFS to EFS cross-region you set the DataSync agent into an EC2 instance, and transfer data from EFS to the agent and from there to the DataSync in the destination region and into the EFS.
+
+What to consider when sending large amounts of data to AWS?
+Consider the time it takes to arrive, for example 200TB over a really fast internet still could take months, so you can consider setting up DX or use Snowball. And also consider how the transfer is, for example it could be an ongoing replication, for which purpose you could use DX, Site-to-Site VPN, DMS, DataSync.
+
+How to backup services in a more centralized manner?
+Using AWS Backup which is a managed service that helps to centrally manage and automate backups from different AWS services. It supports cross-region and cross-account. It also supports PITR (Point In Time Recovery) on the services that support it. You can do On-Demand and Scheduled backups. You can backup policies. You can also backup based on tags. You can also enforce WORM (Write Once Read Many) (forbid deletion to even root user) with Backup Vault Lock.
+
+What are the backup policies?
+They are known as Backup Plans and can be specified frequency, the backup windows, when if ever to transition to Cold Storage and the retention period which can be always, days, weeks, months, years same as the transition to Cold Storage.
+
+How does Backups work?
+You create a Backup Plan for Backups and assign the resources to backup and it will automatically backup to a specific S3 bucket for Backups.
+
+
+Section 27: Machine Learning
+
+How to detect entities on images and videos using ML?
+Using Rekognition to detect objects, people, text, scene, facial analysis and facial search. The use cases are labeling, content moderation, text detention, face detection and analysis, face search and verification, celebrity recognition and pathing.
+
+How to do speech recognition?
+With Transcribe which leverages a deep learning process called ASR (Automatic speech recognition). This helps to convert speech to text.
+
+How to convert text to speech?
+Using Polly which is a text-to-speech service.
+
+How to translate text to different languages?
+Using Translate which is a service for language translation for large volumes of text efficiently.
+
+How to do language understanding from speech?
+Using Lex which is a service that also powers Alexa. It does ASR and natural language understanding so it’s good for customer service applications like call centers or chatbots.
+
+What to use for customer support?
+You can use Amazon Connect which is a service that allows you to receive calls, create contact flows and can be integrated with CRM systems. It is a cheaper solution then traditional call center solutions.
+
+How to analyze natural text?
+By using Amazon Comprehend is a managed serverless service that uses machine learning to do natural language processing from unstructured text or even speech by tokenization. It understands sentiment and can extract information from text and organize information.
+
+How to manage machine learning models?
+With Sagemaker which is a managed service to build ML models, so in the service you upload, label, build, train and tune and deploy machine learning models to be applied to entering data.
+
+How to do a forecast of data?
+Using Amazon Forecast which uses ML to do highly accurate forecasting, with it you upload data to S3 and then Amazon Forecast uses that data and machine learning models to produce forecasts.
+
+How to do document search?
+By using Amazon Kendra which is a document search service that uses machine learning to extract answers from documents and produce answers with natural language searches. It also has incremental learning so it produces better/prefered answers based on the interactions or feedback. It also allows you to manually fine-tune search answers.
+
+How to obtain recommendations based on personal profiles? 
+With Amazon Personalize which is a managed service that uses machine learning to produce recommendations upon user profiles on systems like retail, media and entertainment. The difference between this and using ML models in SageMaker is that it takes weeks to learn instead of months. It reads data from S3 or Amazon Personalize API and integrates with notification or marking systems.
+
+
+How to extract data from visible documents?
+You can use Amazon Textract to extract information from PDFs, images, etc, files into structured data, so for example an ID Document can be extracted into a JSON with the data.
+
+
+Section 28: More Solution Architecture
+
+Is SQS the only way to send data to DLQ?
+You could leverage a lambda function to send to a SQS queue designated as a DQL which is another architecture alternative.
+
+How much time does the S3 event notification take to be delivered?
+Usually seconds but can sometimes take up to a minute or more.
+
+How to get an S3 event from every single update (write) done?
+Enable versioning which ensures each write is its own object.
+
+What are considerations for services with catching capability when using cache?
+With Cloudfront you need to deal with defining an appropriate TTL. With API Gateway has a regional cache. When doing caching for an application, for frequent queries use Redis, Memcached or DAX.
+
+Can one secure an EC2 instance behind a NLB?
+No because the NLB does not have security groups so traffic just goes through the NLB.
+
+Where is WAF placed on the architecture?
+WAF is not placed in a section to receive traffic, but instead it is installed upon the service using it like ALB.
+
+Where is CloudFront placed in the architecture?
+It is outside the VPC so requests coming from the CloudFront distribution come from CloudFront public IP, and that is the reason why NACLs are not useful when using CloudFront because all traffic is coming through it. What you can do is to use WAF on the CloudFront distribution, or use CloudFront restrictions (like geo-restriction).
+
+How leverage the cloud for HPC?
+Optimizing data management and transfer, computing, storage, network performance, and automation and orchestration for HPC.
+
+How to improve data management and transfer for HPC?
+Using Direct connect which is more private and moves up to GBs of data. Snowball and Snowmobile yo move PBs of data. And DataSync to move large amounts of data from on-premise to file system services.
+
+How to improve compute power for HPC?
+Using CPU and GPU optimized instances, and spot instances or spot fleet for cost saving with auto scaling. And using EC2 Cluster placement groups.
+
+How to improve network performance for HPC (High Performance Computing)?
+Using EC2 Enhanced Networking which provides higher bandwidth, higher PPS(package per second), and lower latency. It is done by using ENA (Elastic Network Adapter) which supports up to 100GB/s. And to take it a step further, use EFA (Elastic Fabric Adapter) which is an improved ENA for HPC, it works by leveraging MPI standard and bypassing linux OS, which provides lower latency and more reliable transport, it only works for linux. Besides using ENA the older alternative is to use Intel 82599 VF which gives up to 10GB/s.
+
+
+
+How to improve storage for HPC?
+Regarding instance-attached storage, using EBS io classes like ios2 block express which provides up to 256k IOPS or using instance storage which provides millions of IOPS. And regarding network storage using FSx for Lustre which is HPC optimized distributed file system that offers millions of IOPS, or using EFS which scales IOPS based on total size or you can provision IOPS.
+
+How to do automation and orchestration for HPC?
+Using AWS Batch which based on jobs that can run in parallel, spans multiple EC2 instances, and with it you also schedule jobs. And also using AWS ParallelCluster which is an open source cluster management tool to deploy HPC, it automates creation of VPC, subnets, cluster and instance types. It also has the ability to enable EFA and this is usually used alongside it.
+
+How make a bastion host highly available?
+Deploying it to multiple AZs and having an NLB behind it. You can even have it in a private subnet and make the NLB communicate with it.
+
+
+Section 29: Other services
+
+How to save money using CloudFormation?
+You can create stacks in a certain time period for an environment like Dev and the time outside that period the resources can be easily deleted to avoid incurring in costs.
+
+How to deploy CloudFormation stacks to multiple accounts or regions?
+By leveraging  StackSets which serves to manage stacks cross account and cross region by allowing creation, update and deletion with one operation.
+
+
+
+How to organize lambda workflows?
+Using Step functions which is a serverless service that provides orchestration of lambdas in a simple manner by allowing to define state machines with the lambdas. It has a maximum execution time of 1 year. Another alternative is to use SWF (Simple Workflow Service) which is not serverless and does the same thing as Step functions but is the older version, you should maybe use it when you need external signals to intervene in the process.
+
+How to create Hadoop clusters?
+Using EMR (Elastic MapReduce) is a service that helps provision clusters of EC2 instances that form hadoop clusters. It also can use auto scaling and be integrated with spot instances.
+
+How to do configuration as code?
+Using OpsWork which is the service replacing the open source technologies Chef/Puppet.
+
+How to place VDI (Virtual Desktop Infrastructure)?
+Using AWS Workspaces which is a service that provides the ability to provision secure VDI that can be Microsoft or Linux and can also be integrated with Active Directory.
+
+How to sync data between web and mobile applications?
+Using AppSync, and although Cognito Sync could be used as well for that purpose, AppSync can be identified by the fact that it uses GraphQL.
+
+How to get descriptions of costs for usage?
+On Cost Explorer where you can see usage and cost for the periods used and also forecast cost based on previous usage. It also recommends saving plans.
+
+
+Section 30: WhitePapers and Architectures
+
+How to know if an architecture is well architected according to AWS Well-Architected Framework?
+By leveraging the Well-Architected Tools which helps identify and explain solutions to risks you would face based on your need considering the 6 pillars of the well-architected framework.
+
+What are the 6 pillars of the well-architected framework?
+They are operational excellence, security, reliability, performance efficiency, sustainability, cost optimization. As one may expect these are not trade-offs but rather a synergy.
+
+How to optimize the use of the AWS account?
+Using the Trusted advisor which will analyze the resources and services used on the account and base notifications and recommendations based on Performance, Security, Cost Optimization, Fault Tolerance and Service Limits. You can get weekly email notifications. It also has Business & Enterprise support plans which give more capabilities for recommendations and enable you to set CloudWatch alarms when reaching limits and also use programmatic access.
+
+Where to find AWS architecture examples?
+On aws.amazon.com/architecture and aws.amazon.com/solutions.
+
+What are some techniques to take the exam?
+If you are unsure of an answer, mark it and flag the question
+Don't overthink it
+If an answer is too complicated it’s probably wrong
+Rule out all wrong answers, for the remaining understand which makes more sense
+
+
+
+What are some important whitepapers for the exam?
+Architecting for the Cloud: AWS Best Practices
+https://d1.awsstatic.com/whitepapers/AWS_Cloud_Best_Practices.pdf (Archived)
+
+AWS Well-Architected Framework
+https://d1.awsstatic.com/whitepapers/architecture/AWS_Well-Architected_Framework.pdf
+https://aws.amazon.com/blogs/aws/aws-well-architected-framework-updated-white-papers-tools-and-best-practices/
+
+AWS Disaster Recovery
+https://d1.awsstatic.com/whitepapers/aws-disaster-recovery.pdf (Archived)
