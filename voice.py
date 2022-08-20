@@ -18,6 +18,7 @@ class SpeechTranslator:
         from_lang: Optional[str]
         name: Optional[Any]
         gender: Optional[Any]
+        rate: Optional[int]
 
     def __init__(
         self, default_voice_id: str = "com.apple.speech.synthesis.voice.samantha"
@@ -30,8 +31,11 @@ class SpeechTranslator:
         translated = self.translate_engine.translate(text, dest=dest, src=src)
         return translated
 
-    def read_text(self, text: str, voice: ttsVoice) -> None:
+    def read_text(
+        self, text: str, voice: ttsVoice, rate: int = 200, *args, **kwargs
+    ) -> None:
         self.tts_engine.setProperty("voice", voice.id)
+        self.tts_engine.setProperty("rate", rate)
         self.tts_engine.say(text)
         self.tts_engine.runAndWait()
 
@@ -66,13 +70,13 @@ class SpeechTranslator:
             else self.translate_text(text, to_lang)
         )
         voice = self.get_voice(**{"language": translated.dest, **kwargs})
-        self.read_text(translated.text, voice)
+        self.read_text(translated.text, voice, **kwargs)
 
     def set_default_translate(self, **kwargs) -> None:
         self.tts_settings = self.TTSSettings(**kwargs)
 
     def default_read_translate(self, text: str):
-        self.read_translated(text, **self.tts_settings.dict())
+        self.read_translated(text, **self.tts_settings.dict(exclude_none=True))
 
 
 if __name__ == "__main__":

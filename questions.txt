@@ -71,11 +71,22 @@ What are the differences between the ec2 placements groups strategies?
 We have a strategy intended for applications that require low latency and high network throughput (Cluster) with hardware in the same rack and AZ. Applications with the requirement of high availability and critical applications with low tolerance to failure from other racks (Spread) with hardware in different racks and different AZs, with an instance limit of 7 per AZ. And big data applications (Partition) that need a limitless number of instances with up to 7 partitions on each AZ and multiple instances across different racks on a partition.
 
 How does an instance connect to a network?
-LOOK AT ENI CLASS AND WRITE THE ANSWER
+By using ENI (Elastic Network Interface) which are virtual network cards that provides the instace network connectivity, with it comes a private IP, public IP, MAC address and you can attach multiple security groups to each ENI.
+
+How many ENIs can one have per instance?
+Every instance comes with a default primary ENI but you can attach one or more secondary ENIs.
+
+How many AZs can an ENI be in?
+Only one, ENIs are bound to one AZ.
+
+How to deal with network on failover?
+You can detach and attach the ENIs between instances.
 
 How can one leverage RAM to bootup instances faster after stopping them?
-There is a feature called Hibernation in which the instance is stopped but it stores RAM’s data on a file on the encrypted EBS (must be encrypted), then the instance is stopped. This allows the instances to not have to boot the OS again since the RAM state is preserved.
+There is a feature called Hibernation in which the instance is stopped but it stores RAM’s state data in a file on an encrypted EBS (must be encrypted), then the instance is stopped. This allows the instances to not have to boot the OS again since the RAM state is preserved.
 
+How long can an instance hibernate?
+Not longer than 60 days.
 
 Section 7. EC2 Instance Storage
 
@@ -163,6 +174,9 @@ There is a default termination policy where it chooses the AZs with greater numb
 What if I want to execute specific actions when initiating or terminating an instance on the ASG?
 You can specify them on the Lifecycle hooks that consist of the states that come after an execution of creation or termination. This way there are two states, pending:wait which comes after execution and pending:proceed which comes before finalizing execution.
 
+What benefit does Launch Template offer better from Launch Configuration?
+Launch templates offer versioning and parameter subsets. Besides one can create a mix of On-Demand and Spot instances with it.
+
 
 Section 9. AWS Fundamentals. RDS + Aurora + ElasticCache.
 
@@ -198,10 +212,10 @@ Can Aurora be encrypted?
 Yes, the Aurora service has the same security features as the other RDS databases.
 
 Can Aurora scale horizontally?
-Yes, you can scale your read replicas and the reader endpoint will extend to use the new instances. Also if you can create custom endpoints for read so that you use different subsets of the read replicas instances. You can also have multi master where multiple nodes make read and write operations.
+Yes, you can scale your read replicas and the reader endpoint will extend to use the new instances. Also if you can create custom endpoints for read so that you use different subsets of the read replicas instances. You can also have multi master where multiple nodes make read and write operations at the same time.
 
 Is there a way to use Aurora without provisioning capacity?
-Yes with Aurora serverless where instantiation and scaling is automatic and it’s based on the workload. It doesn’t require capacity planning and it’s pay for use so it can be cost effective.
+Yes with Aurora serverless where instantiation and scaling is automatic and it’s based on the workload. It doesn’t require capacity planning and it’s pay for use so it can be cost effective. Client talks to it through the Fleet Proxy.
 
 How can I obtain more accurate data making queries to Aurora?
 Aurora uses ML services like SageMaker and Comprehend so a query to Aurora can obtain information from the ML services which gives you more accurate information in a certain situation.
@@ -278,11 +292,21 @@ You can upload up to 5TB objects on a bucket but the maximum size to upload in a
 How can you prevent you wrongfully delete a file?
 You can enable versioning where objects get a version ID and when deleted are not permanently deleted but instead they get a deleted marker. When versioning is disabled objects get replaced by new versions instead of persisting them.
 
+What is the default value of version ID for pre-versioned objects?
+When there are files before versioning a bucket, and it gets versioned, they obtain a null value.
+
+
 Can you encrypt objects on S3?
 Yes you can define the encryption of an object when uploading it or you could even define a default encryption type for a bucket which will determine the description of all the bucket’s uploaded objects. There are different types of encrypting an object. There’s SSE-S3 which works with the S3 encryption key. There’s SSE-KMS which uses a KMS key for encryption. And lastly there is SSE-C which is intended for providing your own encryption key, and even though all types up to this point are server side, you are responsible for providing the key when uploading and also decrypting the data, S3 provides the encryption process. Now there’s a four type and it is to not use S3 server side encryption but instead upload your encrypted files, this would be a client side encryption.
 
 How can you add security for an S3 bucket apart from setting the policies?
 There’s the possibility to block all public access by extra settings. This is another layer of security and it acts on top of the defined policies. You can define it both for an object and for the object’s bucket, the latter for blocking all public access of the bucket’s objects.
+
+How to define permissions at the object level?
+You can define read and write permissions at the object level using ACLs (inside the bucket).
+
+How to host static websites?
+You can enable your bucket to be a static website in properties.
 
 Can the internet receive my static website once setting it on S3?
 You first need to make it public by disabling the block all public access configuration and also setting the appropriate policy.
@@ -297,12 +321,21 @@ It’s strongly consistent since December 2020.
 Section 13: AWS SDK, IAM & Policies
 
 How can I get information about an instance without needing proper IAM permissions?
-You can get the information by going to the http://169.254.169.254/latest/meta-data endpoint from inside the EC2 instance.
+You can get the information by going to the http://169.254.169.254/latest/meta-data endpoint from inside the EC2 instance. You can for example get the IAM Role of the instance in this metadata.
+
+What policy types are there on IAM?
+There are AWS managed policies and also Customer managed which are the ones you create.
+
+How to test policies in a fast and efficient way?
+Using the IAM policy simulator where you define the policies and then specify actions for which the simulator will tell you if it’s allowed or denied.
+
+How to perform actions on AWS from the application's code?
+Using the SDK which is offered in various languages. For example the SDK for Python is boto3, and the AWS CLI actually uses this SDK.
 
 
 Section 14: Advances S3 & Athena
 
-How can I secure the permanent deletion of objects on S3?
+How can I secure against permanent deletion of objects on S3?
 You can activate MFA after enabling versioning. This MFA can't be enabled from the AWS console, so you will have to use the AWS CLI.
 
 How can I log activity from my S3 bucket?
@@ -316,6 +349,12 @@ Yes S3 bucket replication can be either CRR (Cross region replication) or SRR (S
 
 Does the data before enabling replication get replicated?
 No, but you can do S3 batch replication to replicate existent objects or failed replication ones.
+
+If a bucket does CRR and the replicated one does CRR, is the first bucket replicating to the last one on a future replication?
+No, buckets dont chain the replication.
+
+How to give temporary premium access to S3?
+By using Pre-signed URLs. They last a certain number of seconds which defaults to 3600.
 
 Are there tiers on S3?
 Yes you can choose objects to be inside a specific storage class. There’s the Standard storage class which is assigned by default and it's intended for content distribution, big data or gaming since it has the best availability of 99.99%. The Standard Infrequent Access (IA) storage class which is intended for disaster recovery or backup since it’s the second must available 99.9% and at a lower cost than standard. There’s One Zone Infrequent Access which it’s intended for secondary backup and has 99.5% availability but it’s on only one AZ. Keeping lowering pricing follows Glacier storage classes with lower cost and also retrieval cost, intended for archiving and backup, there are 3 types of glacier and they differ in retrieval time. There’s Glacier Instance Access which takes milliseconds of retrieval, then Glacier Flexible Retrieval which has expedited (1 to 5 minutes), standard (3 to 5 hours), or bulk (5 to 12 hours), and Glacier Deep Archive with standard (12 hours) and bulk (48 hours). Finally there is Intelligent tiering which is automatically assigned and it adjusts by the frequency of accessing the bucket, it doesn't have retrieval cost but has a monitoring cost.
@@ -337,7 +376,7 @@ You can define either transition or expiration rules. And rules can reference pr
 Is there any help to know when to transition objects on S3?
 Yes, but only for transitions between standard and standard IA and it’s called S3 Analytics, it helps you determine how much time you should wait to transition the objects.
 
-What’s the performance of S3?
+What’s the performance of S3, and how to improve upload and download?
 It scales automatically to a high rate of requests to 3500 for PUT, POST, DELETE, COPY and 5500 for GET, HEAD per second per prefix. You can also use multi-part upload which uploads parts of the objects in parallel. Alternatively to improve performance when uploading to a far away location you can use S3 Transfer Acceleration where AWS uploads to an edge location from which point it will transfer via private network faster to the far away location. Another way to improve performance when downloading is by using Byte-Range fetches where you download only parts of an object and you can also download them all in parallel.
 
 What can limit S3 performance?
@@ -379,6 +418,12 @@ You can do a whitelisting or blacklisting of countries that can access it.
 When to use CloudFront instead of using S3 CRR?
 It’s true that you can replicate your buckets to different regions to improve latency of retrieval for clients, but you would use CloudFront when you need availability of static content cached everywhere. When you need to provide dynamic content with low latency you can opt to replicate cross region.
 
+How long is content cached at CloudFront?
+You define it by setting TTL.
+
+Do you need to configure the bucket policy of an S3 bucket before accessing it with OAI?
+No, but creating an OAI and assigning it to the CloudFront distribution, then a bucket policy will be automatically created in the S3 bucket.
+
 Can I exclusively restrict CloudFront urls?
 Yes, you can use Signed URL or Signed Cookies which provides users with access with expiration time and can restrict access to certain IP ranges, path, date. The difference between signed url and signed cookie is that the first is intended to link one file, and the cookies one is intended to link to multiple files.
 
@@ -386,7 +431,7 @@ When should I use CloudFront Signed URL/Cookies instead of S3 Presigned URL?
 Cloudfront on top of giving restrictions like IP, you can leverage caching features. Also you can define any path as a Signed URL/Cookie and not just objects, so you should use it when you have those requirements. Now the S3 presigned url user has the same permissions as the IAM user that created it, you should use it if you are granting direct access to S3 and are not managing your flows with CloudFront.
 
 How does pricing work in CloudFront?
-There’s a variation in the cost depending on the region. For this there’s different Price Classes you can define, there’s the All class which uses all edge locations therefore the best performance and the most expensive. There’s the 100 class that uses almost all edge locations (not using south america and australia)(don't use the most expensive) and there’s the 200 class that uses only a few locations (america and europe).
+There’s a variation in the cost depending on the region. For this there’s different Price Classes you can define, there’s the All class which uses all edge locations therefore the best performance and the most expensive. There’s the 200 class that uses almost all edge locations (not using south america and australia)(don't use the most expensive) and there’s the 100 class that uses only a few locations (america and europe).
 
 What if I have different origins to be requested?
 You can use multi origin, with which depending on the path you can define multiple request destinations (origins).
@@ -398,7 +443,13 @@ How can I increase traffic security in CloudFront?
 You can leverage Field Level Encryption where CloudFront uses asymmetric encryptions and encrypts defined up to 10 fields to be decrypted when arrived at the origin with an specific private key.
 
 Is there an alternative to improve performance when requesting far away locations?
-You can use Global Accelerator service. It works by using Anycast(same IP for all hops so takes the nearest one) and traffic goes to the nearest close location and then to the origin. It lowers latency and doesn’t cache data, just improves performance when requesting origins. It has health checks of origins for failover, and gets security for Ddos protection from AWS Shield as CloudFront. This Global Accelerator is intended to be used when you need connections without catching and non-HTTP cases like gaming.
+You can use Global Accelerator service. It works by using Anycast(same IP for all hops so takes the nearest one) and traffic goes to the nearest close location and then to the origin. It lowers latency and doesn’t cache data, just improves performance when requesting origins. It has health checks of origins for failover, and gets security for Ddos protection from AWS Shield as CloudFront. This Global Accelerator is intended to be used when you need connections without catching and non-HTTP cases like gaming. It uses 2 IPs. It’s also good for use cases that require static IP.
+
+What services does Global Accelerator work with?
+They are Elastic IP, ALB, NLB, EC2 instances.
+
+How does Global Accelerator provide disaster recovery?
+By giving a failover in less than 1 minutes due to the health checks it performs.
 
 
 Section 16: Storage Extras
@@ -477,7 +528,6 @@ There’s the SQS Temporary Queue Client which leverages virtual queues to make 
 
 Is there a way to assure that there will be no duplicate messages when polling?
 A SQS FIFO queue can be created and since it is fifo then the message will be returned in order and without duplicating. One thing to consider is that there will be a throughput limit of 300msg/s.
-
 
 How can a system leverage Pub/Sub from AWS?
 By using SNS where there can be up to 12.5million subscribers for a topic and up to 100k topics. Data is not persisted.
@@ -1350,8 +1400,6 @@ Using CPU and GPU optimized instances, and spot instances or spot fleet for cost
 How to improve network performance for HPC (High Performance Computing)?
 Using EC2 Enhanced Networking which provides higher bandwidth, higher PPS(package per second), and lower latency. It is done by using ENA (Elastic Network Adapter) which supports up to 100GB/s. And to take it a step further, use EFA (Elastic Fabric Adapter) which is an improved ENA for HPC, it works by leveraging MPI standard and bypassing linux OS, which provides lower latency and more reliable transport, it only works for linux. Besides using ENA the older alternative is to use Intel 82599 VF which gives up to 10GB/s.
 
-
-
 How to improve storage for HPC?
 Regarding instance-attached storage, using EBS io classes like ios2 block express which provides up to 256k IOPS or using instance storage which provides millions of IOPS. And regarding network storage using FSx for Lustre which is HPC optimized distributed file system that offers millions of IOPS, or using EFS which scales IOPS based on total size or you can provision IOPS.
 
@@ -1369,8 +1417,6 @@ You can create stacks in a certain time period for an environment like Dev and t
 
 How to deploy CloudFormation stacks to multiple accounts or regions?
 By leveraging  StackSets which serves to manage stacks cross account and cross region by allowing creation, update and deletion with one operation.
-
-
 
 How to organize lambda workflows?
 Using Step functions which is a serverless service that provides orchestration of lambdas in a simple manner by allowing to define state machines with the lambdas. It has a maximum execution time of 1 year. Another alternative is to use SWF (Simple Workflow Service) which is not serverless and does the same thing as Step functions but is the older version, you should maybe use it when you need external signals to intervene in the process.
@@ -1410,8 +1456,6 @@ If you are unsure of an answer, mark it and flag the question
 Don't overthink it
 If an answer is too complicated it’s probably wrong
 Rule out all wrong answers, for the remaining understand which makes more sense
-
-
 
 What are some important whitepapers for the exam?
 Architecting for the Cloud: AWS Best Practices

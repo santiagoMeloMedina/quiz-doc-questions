@@ -2,8 +2,7 @@ import pydantic
 import enum
 import random
 import os
-from typing import Dict, Generator, List, Optional, Tuple
-from itertools import islice
+from typing import Dict, Generator, List, Optional
 import signal
 from voice import SpeechTranslator
 
@@ -14,7 +13,10 @@ from voice import SpeechTranslator
 
 
 SPEECH = SpeechTranslator()
-SPEECH.set_default_translate(to_lang="en", from_lang="en", name="Samantha")
+
+SPEECH_VOICE_NAME = "Samantha"
+SPEECH_TO_LANG = "en"
+SPEECH_FROM_LANG = "en"
 
 PROGRESS_FILE = "progress.db"
 
@@ -157,8 +159,8 @@ def newly_take():
 
 
 def decide_questions():
-    global prog_question, prog_section, randomize
-    prog_question, prog_section, randomize = 0, None, True
+    global prog_question, prog_section, randomize, with_voice
+    prog_question, prog_section, randomize, with_voice = 0, None, True, False
     progress_section, progress_question = get_progress()
     progress_section, progress_question = eval(progress_section), eval(
         progress_question
@@ -185,6 +187,12 @@ def display_question(question: Question):
     print(f"{ConsoleColors.OKCYAN.value}{question.section}{ConsoleColors.ENDC.value}")
     print(f"{ConsoleColors.OKGREEN.value}{question.question}{ConsoleColors.ENDC.value}")
     if with_voice:
+        SPEECH.set_default_translate(
+            to_lang=SPEECH_TO_LANG,
+            from_lang=SPEECH_FROM_LANG,
+            name=SPEECH_VOICE_NAME,
+            rate=200,
+        )
         SPEECH.default_read_translate(question.question)
     input()
     print(
@@ -194,6 +202,12 @@ def display_question(question: Question):
     )
     if with_voice:
         for answer in question.answers:
+            SPEECH.set_default_translate(
+                to_lang=SPEECH_TO_LANG,
+                from_lang=SPEECH_FROM_LANG,
+                name=SPEECH_VOICE_NAME,
+                rate=250,
+            )
             SPEECH.default_read_translate(answer)
     input("\n\nSiguiente pregunta -->")
 
