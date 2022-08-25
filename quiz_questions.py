@@ -44,8 +44,18 @@ class Text(pydantic.BaseModel):
     type: TextType
 
 
+class Section(pydantic.BaseModel):
+    name: str
+    total: int = 0
+
+    def added_question(self):
+        self.total += 1
+    
+    def __str__(self):
+        return self.name
+
 class Question(pydantic.BaseModel):
-    section: Optional[str]
+    section: Optional[Section]
     question: Optional[str]
     answers: List[str] = []
 
@@ -84,16 +94,18 @@ def get_organized_questions() -> Dict[str, List[Question]]:
         if current is None:
             stop = True
             if question.is_valid():
-                sections[question.section].append(question)
+                sections[question.section.name].append(question)
 
         elif current.type == TextType.SECTION:
-            section = current.text
-            sections[section] = []
+            section = Section(name=current.text)
+            sections[section.name] = []
 
         elif current.type == TextType.QUESTION:
             if question.is_valid():
-                sections[question.section].append(question)
+                sections[question.section.name].append(question)
+            
             question = Question(question=current.text, section=section)
+            section.added_question()
 
         elif current.type == TextType.ANSWER:
             question.answers.append(current.text)
@@ -181,10 +193,11 @@ def decide_questions():
     return questions
 
 
-def display_question(question: Question):
+def display_question(question: Question, prog_question: int):
     global with_voice
     os.system("clear")
     print(f"{ConsoleColors.OKCYAN.value}{question.section}{ConsoleColors.ENDC.value}")
+    print(f"{ConsoleColors.OKBLUE.value}{prog_question}/{question.section.total}{ConsoleColors.ENDC.value}")
     print(f"{ConsoleColors.OKGREEN.value}{question.question}{ConsoleColors.ENDC.value}")
     if with_voice:
         SPEECH.set_default_translate(
@@ -224,7 +237,7 @@ def start_quiz(questions: Generator[Question, None, None]):
             os.system("clear")
             print("Finished!")
         else:
-            display_question(question)
+            display_question(question, prog_question)
 
 
 if __name__ == "__main__":
